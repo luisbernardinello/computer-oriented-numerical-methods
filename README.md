@@ -2,7 +2,7 @@
 ![License](https://img.shields.io/badge/Code%20License-MIT-blue.svg)
 # Computer Oriented Numerical Methods :triangular_ruler::books:
 
-![database](https://socialify.git.ci/luisbernardinello/database/image?font=Raleway&language=1&name=1&owner=1&pattern=Solid&theme=Light)
+![computer-oriented-numerical-methods](https://socialify.git.ci/luisbernardinello/computer-oriented-numerical-methods/image?font=Raleway&language=1&name=1&owner=1&pattern=Overlapping%20Hexagons&theme=Auto)
 
 ## :telescope: What will you find? :telescope:
 
@@ -13,10 +13,18 @@ This repository contains study resources and one project of a numerical methods 
 
 ## The Methods
 
-<img src="img/methods.jpg" align="center" height=auto width=100%/>
-
-<br/>
-
+1. **Gauss-Jordan Method**
+2. **LU Decomposition Method**
+3. **Compact Gauss Method**
+4. **Cholesky Method**
+5. **Matrix Inversion**
+6. **Iterative Methods:**
+    - **Jacobi-Richardson Method**
+    - **Gauss-Seidel Method**
+7. **Bisection Method**
+8. **Newton-Raphson Method**
+9. **Finite Difference Method**
+10. **Polynomial Interpolation**
 
 #### Calculator Project
 
@@ -30,6 +38,8 @@ This repository contains study resources and one project of a numerical methods 
 
 ### References
 - [1] Cálculo Numérico: aprendizagem com Apoio de Software - Selma Arenales; Artur Darezzo [Here](books/calculonumerico-selma.pdf)
+- [2] Métodos Numéricos para Engenharia - Raymond Canale [Here](books/metodosnumericos-raymondcanale.pdf)
+
 
 
 ---
