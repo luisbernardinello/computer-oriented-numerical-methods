@@ -28,8 +28,7 @@ class Application:
             "Calcular pelo método de Gauss Jordan",
             "Calcular pelo método de Jacobi",
             "Calcular pelo método de Gauss-Seidel",
-            "Calcular matriz inversa (Decomposição LU)",
-            "Calcular matriz inversa (Gauss Compacto)",
+            "Calcular matriz inversa",
             "Sair"
         ]
 
@@ -49,6 +48,7 @@ class Application:
 
     def handle_selection(self):
         selected_option = self.selection.get()
+        
         if selected_option == "Sair":
             self.master.destroy()
         elif selected_option == "Entrar com matriz":
@@ -87,34 +87,67 @@ class Application:
                         if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
                             X[i] = 0
                     messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-        elif selected_option == "Calcular pelo método de Cholesky":
+        elif selected_option == "Calcular pelo método de Gauss Compacto":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                cholesky_solution = self.calcular_cholesky(len(self.M), self.M, self.V)
-                if cholesky_solution is not None:
-                    messagebox.showinfo("Resultado", f"Os valores da solução são: {', '.join(map(str, cholesky_solution))}")
+                X = self.gauss_compacto(len(self.M), self.M, self.V)
+                for i in range(len(X)):
+                        if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
+                            X[i] = 0
+                messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
+        elif selected_option == "Calcular pelo método de Gauss Jordan":
+            if not hasattr(self, 'M') or not hasattr(self, 'V'):
+                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
+            else:
+                X = self.gauss_jordan(len(self.M), self.M, self.V)
+                if X is None:
+                    messagebox.showerror("Erro", "O sistema gerado é indeterminado.")
                 else:
-                    messagebox.showerror("Erro", "A matriz não é simétrica ou não é definida positiva.")
+                    for i in range(len(X)):
+                        if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
+                            X[i] = 0
+                    messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
         elif selected_option == "Calcular pelo método de Jacobi":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                jacobi_solution, numero_iteracoes = self.calcular_jacobi(self.M, self.V, np.zeros(len(self.V)), 1e-5, 1000)
-                if jacobi_solution is not None:
-                    messagebox.showinfo("Resultado", f"A solução é: {', '.join(map(str, jacobi_solution))}\nNúmero de iterações: {numero_iteracoes}")
+                B = self.V.tolist()
+                aproximacao = [0] * len(self.M)
+                X = [0] * len(self.M)
+                max_iter = 1000  # Defina o número máximo de iterações
+                e = 0.0001  # Defina a precisão desejada
+                iteracoes = [0]
+                if not self.criterio_colunas(self.M) or not self.criterio_linhas(self.M):
+                    messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Colunas não satisfeito.")
                 else:
-                    messagebox.showerror("Erro", "Não foi possível calcular o sistema!")
+                    self.jacobi(len(self.M), self.M.tolist(), B, aproximacao, e, max_iter, X, iteracoes)
+                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iteracoes[0]}"
+                    messagebox.showinfo("Resultado", result_str)
+
         elif selected_option == "Calcular pelo método de Gauss-Seidel":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                gauss_seidel_solution, numero_iteracoes = self.calcular_gauss_seidel(self.M, self.V, np.zeros(len(self.V)), 1e-5, 1000)
-                if gauss_seidel_solution is not None:
-                    messagebox.showinfo("Resultado", f"A solução é: {', '.join(map(str, gauss_seidel_solution))}\nNúmero de iterações: {numero_iteracoes}")
+                B = self.V.tolist()
+                aproximacao = [0] * len(self.M)
+                X = [0] * len(self.M)
+                max_iter = 1000  # Defina o número máximo de iterações
+                e = 0.0001  # Defina a precisão desejada
+                iteracoes = [0]
+                if not self.criterio_linhas(self.M) or not self.criterio_sassenfeld(self.M):
+                    messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Sassenfeld não satisfeito.")
                 else:
-                    messagebox.showerror("Erro", "Não foi possível calcular o sistema!")
-        
+                    self.gauss_seidel(len(self.M), self.M.tolist(), B, aproximacao, e, max_iter, X, iteracoes)
+                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iteracoes[0]}"
+                    messagebox.showinfo("Resultado", result_str)
+
+        elif selected_option == "Calcular matriz inversa":
+            if not hasattr(self, "M"):
+                messagebox.showerror("Erro", "Matriz não foi inserida")
+            else:
+                self.inverse_matrix_calculator()
+                
 
 
 
@@ -210,6 +243,145 @@ class Application:
         self.V = np.array(V)
         self.vector_window.destroy()
         messagebox.showinfo("Sucesso", "Vetor inserido com sucesso.")
+
+    def inverse_matrix_calculator(self):
+        if not hasattr(self, "inverse_matrix_window"):
+            self.inverse_matrix_window = tk.Toplevel(self.master)
+            self.inverse_matrix_window.title("Matriz Inversa")
+            self.inverse_matrix_window.resizable(False, False)
+
+            self.inverse_matrix_options = [
+                "Calcular Matriz Inversa por Gauss Compacto",
+                "Calcular por Decomposição LU",
+            ]
+
+            self.inverse_matrix_selection = tk.StringVar(value=self.inverse_matrix_options[0])
+
+            for inverse_matrix_options in self.inverse_matrix_options:
+                tk.Radiobutton(
+                    self.inverse_matrix_window,
+                    text=inverse_matrix_options,
+                    variable=self.inverse_matrix_selection,
+                    value=inverse_matrix_options,
+                    bg="white"
+                ).pack(anchor=tk.W)
+
+            self.confirm_button_inverse_matrix = tk.Button(self.inverse_matrix_window, text="Confirmar", command=self.confirm_inverse_matrix)
+            self.confirm_button_inverse_matrix.pack()
+
+    def confirm_inverse_matrix(self):
+        selected_inverse_matrix_option = self.inverse_matrix_selection.get()
+        if selected_inverse_matrix_option == "Calcular Matriz Inversa por Gauss Compacto":
+            ordem = len(self.M)
+            inversa = self.inversa_gauss(ordem, self.M)
+            if inversa is not None:
+                self.show_inverse_matrix(inversa)
+        elif selected_inverse_matrix_option == "Calcular por Decomposição LU":
+            ordem = len(self.M)
+            inversa = self.inversa_lu(ordem, self.M)
+            if inversa is not None:
+                self.show_inverse_matrix(inversa)
+
+    def show_inverse_matrix(self, inversa):
+        
+        result_window = tk.Toplevel(self.master)
+        result_window.title("Resultado da Matriz Inversa")
+        
+        result_window.resizable(False, False)
+
+        #  label para o resultado
+        result_label = tk.Label(result_window, text="Matriz Inversa:")
+        result_label.grid(row=0, column=0, columnspan=len(inversa[0]))
+
+        # elementos da matriz como labels
+        for i, row in enumerate(inversa):
+            for j, cell in enumerate(row):
+                cell_label = tk.Label(result_window, text=str(cell), relief=tk.RIDGE, width=5, height=2)
+                cell_label.grid(row=i+1, column=j, padx=5, pady=5)
+
+        close_button = tk.Button(result_window, text="Fechar", command=result_window.destroy)
+        close_button.grid(row=len(inversa)+1, column=0, columnspan=len(inversa[0]), pady=10)
+
+    def sist_inversa_lu(self, ordem, matriz, L, U):
+        for i in range(ordem):
+            for j in range(ordem):
+                U[i][j] = matriz[i][j]
+
+        for k in range(ordem):
+            L[k][k] = 1.0
+
+            for i in range(k + 1, ordem):
+                L[i][k] = U[i][k] / U[k][k]
+                for j in range(k, ordem):
+                    U[i][j] -= L[i][k] * U[k][j]
+
+
+
+    def inversa_lu(self, ordem, matriz):
+        L = [[0] * ordem for _ in range(ordem)]
+        U = [[0] * ordem for _ in range(ordem)]
+        identidade = [[1 if i == j else 0 for j in range(ordem)] for i in range(ordem)]
+
+        self.sist_inversa_lu(ordem, matriz, L, U)
+
+        y = [[0] * ordem for _ in range(ordem)]
+
+        # Sistema Ly = I
+        for k in range(ordem):
+            for i in range(ordem):
+                soma = sum(L[i][j] * y[j][k] for j in range(i))
+                y[i][k] = (identidade[i][k] - soma) / L[i][i]
+
+        inversa = [[0] * ordem for _ in range(ordem)]
+
+        # Sistema Ux = y
+        for k in range(ordem):
+            for i in range(ordem - 1, -1, -1):
+                soma = sum(U[i][j] * inversa[j][k] for j in range(i + 1, ordem))
+                inversa[i][k] = (y[i][k] - soma) / U[i][i]
+
+        return inversa
+
+    def inversa_gauss(self, ordem, matriz):
+        matriz_aumentada = [[0] * (2 * ordem) for _ in range(ordem)]
+
+        for i in range(ordem):
+            for j in range(ordem):
+                matriz_aumentada[i][j] = matriz[i][j]
+                matriz_aumentada[i][j + ordem] = 1.0 if i == j else 0.0
+
+        # Gauss compacto
+        for i in range(ordem):
+            pivo = matriz_aumentada[i][i]
+
+            if pivo == 0:
+                troca = False
+
+                for j in range(i + 1, ordem):
+                    if matriz_aumentada[j][i] != 0:
+                        troca = True
+                        matriz_aumentada[i], matriz_aumentada[j] = matriz_aumentada[j], matriz_aumentada[i]
+                        break
+
+                if not troca:
+                    messagebox.showerror("Erro", "A matriz não é invertível")
+                    return None
+
+                pivo = matriz_aumentada[i][i]
+
+            for j in range(2 * ordem):
+                matriz_aumentada[i][j] /= pivo
+
+            for k in range(ordem):
+                if k != i:
+                    fator = matriz_aumentada[k][i]
+                    for j in range(2 * ordem):
+                        matriz_aumentada[k][j] -= fator * matriz_aumentada[i][j]
+
+        inversa = [[matriz_aumentada[i][j + ordem] for j in range(ordem)] for i in range(ordem)]
+        return inversa
+
+    
 
     def calcular_determinante(self, matrix):
         n = len(matrix)
@@ -319,6 +491,66 @@ class Application:
     
 
 
+
+
+    # gauss compacto
+
+    def gauss_compacto(self, n, M, B):
+        X = np.zeros(n)
+
+        for k in range(n - 1):
+            for i in range(k + 1, n):
+                aux = M[i][k] / M[k][k]
+                B[i] -= aux * B[k]
+                for j in range(k, n):
+                    M[i][j] -= aux * M[k][j]
+
+        X[n - 1] = B[n - 1] / M[n - 1][n - 1]
+
+        for i in range(n - 2, -1, -1):
+            aux = B[i]
+            for j in range(i + 1, n):
+                aux -= M[i][j] * X[j]
+            X[i] = aux / M[i][i]
+
+        return X
+    
+
+    # gauss jordan
+    def gauss_jordan(self, n, M, B):
+        matrizAumentada = np.zeros((n, n + 1))
+
+        for i in range(n):
+            for j in range(n + 1):
+                if j == n:
+                    matrizAumentada[i][j] = B[i]
+                else:
+                    matrizAumentada[i][j] = M[i][j]
+
+        for i in range(n):
+            pivo = matrizAumentada[i][i]
+            if pivo == 0:
+                return None  # Sistema indeterminado
+            else:
+                for j in range(i, n + 1):
+                    matrizAumentada[i][j] /= pivo
+
+                for k in range(n):
+                    if k != i:
+                        fator = matrizAumentada[k][i]
+                        for j in range(i, n + 1):
+                            matrizAumentada[k][j] -= fator * matrizAumentada[i][j]
+
+        X = np.zeros(n)
+        for i in range(n):
+            X[i] = matrizAumentada[i][n]
+
+        return X
+    
+
+##############################################################################
+    #aqui começa os métodos iterativos
+
     #metodos auxiliares para os metodos iterativos
 
     def criterio_colunas(self, B):
@@ -372,7 +604,65 @@ class Application:
     
     #jacobi
 
-  
+
+    def jacobi(n, M, vetorB, aproximacao, e, maxIter, X, iteracoes):
+        temp = [0] * n
+
+        for iter in range(1, maxIter + 1):
+            erro = 0.0
+
+            for i in range(n):
+                temp[i] = vetorB[i]
+                for j in range(n):
+                    if i != j:
+                        temp[i] -= M[i][j] * aproximacao[j]
+                temp[i] /= M[i][i]
+
+            for i in range(n):
+                erro += (temp[i] - aproximacao[i]) * (temp[i] - aproximacao[i])
+
+            for i in range(n):
+                aproximacao[i] = temp[i]
+
+            if erro < e:
+                break
+
+        for i in range(n):
+            X[i] = aproximacao[i]
+
+        iteracoes[0] = iter
+        return X
+    
+
+    #gauss seidel
+
+    def gauss_seidel(ordem, matriz, B, aproximacao, e, maxIter, X, iteracoes):
+        aprox_atual = aproximacao.copy()
+        aprox_anterior = aproximacao.copy()
+
+        for iteracao in range(maxIter):
+            aprox_anterior = aprox_atual.copy()
+
+            for i in range(ordem):
+                soma = 0
+                for j in range(ordem):
+                    if j != i:
+                        soma += matriz[i][j] * aprox_atual[j]
+                aprox_atual[i] = (B[i] - soma) / matriz[i][i]
+
+            diferenca = sum(abs(aprox_atual[i] - aprox_anterior[i]) for i in range(ordem))
+
+            if diferenca < e:
+                break
+
+        for i in range(ordem):
+            X[i] = aprox_atual[i]
+
+        iteracoes[0] = iteracao
+        return X
+
+
+    
 
     
 
