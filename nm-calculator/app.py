@@ -73,6 +73,52 @@ class Application:
             else:
                 X = self.calcular_triangular_superior(len(self.M), self.M, self.V)
                 messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
+        elif selected_option == "Calcular pelo método de Decomposicao LU":
+            if not hasattr(self, 'M') or not hasattr(self, 'V'):
+                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
+            else:
+                determinant = self.calcular_determinante(self.M)
+                if determinant == 0:
+                    messagebox.showerror("Erro", "A matriz inserida não converge. O determinante é igual a zero.")
+                else:
+                    L, U, B = self.decomposicao_lu(len(self.M), self.M, self.V)
+                    X = self.sistema_lu(len(self.M), L, U, B)
+                    for i in range(len(X)):
+                        if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
+                            X[i] = 0
+                    messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
+        elif selected_option == "Calcular pelo método de Cholesky":
+            if not hasattr(self, 'M') or not hasattr(self, 'V'):
+                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
+            else:
+                cholesky_solution = self.calcular_cholesky(len(self.M), self.M, self.V)
+                if cholesky_solution is not None:
+                    messagebox.showinfo("Resultado", f"Os valores da solução são: {', '.join(map(str, cholesky_solution))}")
+                else:
+                    messagebox.showerror("Erro", "A matriz não é simétrica ou não é definida positiva.")
+        elif selected_option == "Calcular pelo método de Jacobi":
+            if not hasattr(self, 'M') or not hasattr(self, 'V'):
+                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
+            else:
+                jacobi_solution, numero_iteracoes = self.calcular_jacobi(self.M, self.V, np.zeros(len(self.V)), 1e-5, 1000)
+                if jacobi_solution is not None:
+                    messagebox.showinfo("Resultado", f"A solução é: {', '.join(map(str, jacobi_solution))}\nNúmero de iterações: {numero_iteracoes}")
+                else:
+                    messagebox.showerror("Erro", "Não foi possível calcular o sistema!")
+        elif selected_option == "Calcular pelo método de Gauss-Seidel":
+            if not hasattr(self, 'M') or not hasattr(self, 'V'):
+                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
+            else:
+                gauss_seidel_solution, numero_iteracoes = self.calcular_gauss_seidel(self.M, self.V, np.zeros(len(self.V)), 1e-5, 1000)
+                if gauss_seidel_solution is not None:
+                    messagebox.showinfo("Resultado", f"A solução é: {', '.join(map(str, gauss_seidel_solution))}\nNúmero de iterações: {numero_iteracoes}")
+                else:
+                    messagebox.showerror("Erro", "Não foi possível calcular o sistema!")
+        
+
+
+
+
 
     def enter_matrix(self):
         self.matrix_window = tk.Toplevel(self.master)
@@ -165,44 +211,173 @@ class Application:
         self.vector_window.destroy()
         messagebox.showinfo("Sucesso", "Vetor inserido com sucesso.")
 
-    def calcular_determinante(self, matriz):
-        n = len(matriz)
+    def calcular_determinante(self, matrix):
+        n = len(matrix)
         if n == 1:
-            return matriz[0][0]
+            return matrix[0][0]
         else:
             resp = 0
             for i in range(n):
-                if matriz[0][i] != 0:
-                    matriz_aux = np.delete(matriz, 0, axis=0)
-                    matriz_aux = np.delete(matriz_aux, i, axis=1)
-                    pivo = matriz[0][i] if i % 2 == 0 else -matriz[0][i]
-                    resp += pivo * self.calcular_determinante(matriz_aux)
+                if matrix[0][i] != 0:
+                    matrix_aux = np.delete(matrix, 0, axis=0)
+                    matrix_aux = np.delete(matrix_aux, i, axis=1)
+                    pivo = matrix[0][i] if i % 2 == 0 else -matrix[0][i]
+                    resp += pivo * self.calcular_determinante(matrix_aux)
             return resp
         
-    def calcular_triangular_inferior(self, n, M, V):
+    def calcular_triangular_inferior(self, n, matrix, vector):
         X = np.zeros(n)
         for i in range(n):
             if i == 0:
-                X[0] = V[0] / M[0][0]
+                X[0] = vector[0] / matrix[0][0]
             else:
                 soma = 0
                 for j in range(i):
-                    soma += M[i][j] * X[j]
-                X[i] = (V[i] - soma) / M[i][i]
+                    soma += matrix[i][j] * X[j]
+                X[i] = (vector[i] - soma) / matrix[i][i]
         return X
 
-    def calcular_triangular_superior(self, n, M, V):
+    def calcular_triangular_superior(self, n, matrix, vector):
         X = np.zeros(n)
         for i in range(n - 1, -1, -1):
             if i == n - 1:
-                X[i] = V[i] / M[i][i]
+                X[i] = vector[i] / matrix[i][i]
             else:
                 soma = 0
                 for j in range(i + 1, n):
-                    soma += M[i][j] * X[j]
-                X[i] = (V[i] - soma) / M[i][i]
+                    soma += matrix[i][j] * X[j]
+                X[i] = (vector[i] - soma) / matrix[i][i]
+        return X
+    
+    # decomposiçãoLU
+    def matriz_u(self, i, n, matrix, L, U):
+        for j in range(n):
+            if i == 0:
+                U[i][j] = matrix[i][j]
+            else:
+                soma = 0
+                for k in range(i):
+                    soma += L[i][k] * U[k][j]
+                U[i][j] = matrix[i][j] - soma
+
+    def matriz_l(self, j, n, matrix, L, U):
+        for i in range(n):
+            if j == 0:
+                L[i][j] = matrix[i][j] / U[j][j]
+            else:
+                soma = 0
+                for k in range(j):
+                    soma += L[i][k] * U[k][j]
+                L[i][j] = (matrix[i][j] - soma) / U[j][j]
+
+    def sistema_lu(self, n, L, U, B):
+        Y = np.zeros(n)
+
+        # Ly = B
+        Y[0] = B[0] / L[0][0]
+        for i in range(1, n):
+            soma = 0
+            for j in range(i):
+                soma += L[i][j] * Y[j]
+            Y[i] = (B[i] - soma) / L[i][i]
+
+        # Ux = y
+        X = np.zeros(n)
+        X[n - 1] = Y[n - 1] / U[n - 1][n - 1]
+        for i in range(n - 2, -1, -1):
+            soma = 0
+            for j in range(i + 1, n):
+                soma += U[i][j] * X[j]
+            X[i] = (Y[i] - soma) / U[i][i]
+
         return X
 
+    def decomposicao_lu(self, n, M, B):
+        U = np.zeros((n, n))
+        L = np.zeros((n, n))
+
+        for i in range(n):
+            self.matriz_u(i, n, M, L, U)
+            self.matriz_l(i, n, M, L, U)
+
+        return L, U, B
+    
+    #cholesky
+    def simetrica(self, matrix, order):
+        for i in range(order):
+            for j in range(order):
+                if matrix[i][j] != matrix[j][i]:
+                    return False
+        return True
+
+    def definida_positiva(self, matrix, order):
+        for cont in range(1, order + 1):
+            aux = matrix[:cont, :cont]
+            if np.linalg.det(aux) <= 10e-7:
+                return False
+        return True
+    
+
+
+    #metodos auxiliares para os metodos iterativos
+
+    def criterio_colunas(self, B):
+        valor_max = -1
+        for i in range(len(B)):
+            aux = 0
+            for j in range(len(B)):
+                if i != j:
+                    aux += abs(B[j][i])
+            if aux > valor_max:
+                valor_max = aux
+        return valor_max < 1
+
+    def criterio_linhas(self, B):
+        valor_max = -1
+        for i in range(len(B)):
+            aux = 0
+            for j in range(len(B)):
+                if i != j:
+                    aux += abs(B[j][i])
+            if aux > valor_max:
+                valor_max = aux
+        return valor_max < 1
+
+    def criterio_sassenfeld(self, B):
+        auxB = [0] * len(B)
+        for i in range(len(B)):
+            for j in range(len(B)):
+                if j < i:
+                    auxB[i] += B[i][j] * auxB[j]
+                else:
+                    auxB[i] += B[i][j]
+        
+        maior = auxB[0]
+        for i in range(1, len(B)):
+            if auxB[i] > maior:
+                maior = auxB[i]
+        return maior < 1
+
+    def calcula_erro(self, initialX, solution):
+        erro = abs(solution[0] - initialX[0])
+        valor_max = abs(solution[0])
+
+        for i in range(1, len(initialX)):
+            if abs(solution[i] - initialX[i]) > erro:
+                erro = abs(solution[i] - initialX[i])
+            if abs(solution[i]) > valor_max:
+                valor_max = abs(solution[i])
+
+        return erro / valor_max
+    
+    #jacobi
+
+  
+
+    
+
+
+#main
 def main():
     root = tk.Tk()
     app = Application(root)
