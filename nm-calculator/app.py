@@ -692,7 +692,7 @@ class Application:
             temp = 0
             for j in range(len(vector)):
                 if i != j:
-                    aux += abs(vector[j][i])
+                    temp += abs(vector[j][i])
             if temp > max_value:
                 max_value = temp
         return max_value < 1
