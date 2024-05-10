@@ -114,33 +114,33 @@ class Application:
             if not hasattr(self, 'M'):
                 messagebox.showerror("Erro", "Nenhuma matriz foi inserida.")
             else:
-                determinant = self.calcular_determinante(self.M)
+                determinant = self.calc_determinant(self.M)
                 messagebox.showinfo("Resultado", f"O determinante é: {determinant:.3f}")
 
         elif selected_option == "Calcular o sistema triangular inferior":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                X = self.calcular_triangular_inferior(len(self.M), self.M, self.V)
+                X = self.calc_lower_triangular(len(self.M), self.M, self.V)
                 messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
 
         elif selected_option == "Calcular o sistema triangular superior":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                X = self.calcular_triangular_superior(len(self.M), self.M, self.V)
+                X = self.calc_upper_triangular(len(self.M), self.M, self.V)
                 messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
 
         elif selected_option == "Calcular pelo método de Decomposicao LU":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                determinant = self.calcular_determinante(self.M)
+                determinant = self.calc_determinant(self.M)
                 if determinant == 0:
                     messagebox.showerror("Erro", "A matriz inserida não converge. O determinante é igual a zero.")
                 else:
-                    L, U, B = self.decomposicao_lu(len(self.M), self.M, self.V)
-                    X = self.sistema_lu(len(self.M), L, U, B)
+                    triangular_matrix_L, triangular_matrix_U, vector = self.calc_LU_decomposition(len(self.M), self.M, self.V)
+                    X = self.aux_LU(len(self.M), triangular_matrix_L, triangular_matrix_U, vector)
                     for i in range(len(X)):
                         if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
                             X[i] = 0
@@ -150,14 +150,14 @@ class Application:
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                determinant = self.calcular_determinante(self.M)
-                simetrica = self.simetrica(self.M)
+                determinant = self.calc_determinant(self.M)
+                calc_simetric = self.calc_simetric(self.M)
                 if determinant < 0:
                     messagebox.showerror("Erro", "A matriz inserida não é definida positiva.")
-                elif simetrica == False:
+                elif calc_simetric == False:
                     messagebox.showerror("Erro", "A matriz inserida não é simétrica.")
                 else:
-                    X = self.cholesky(len(self.M), self.M, self.V)
+                    X = self.calc_cholesky(len(self.M), self.M, self.V)
                     for i in range(len(X)):
                         if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
                             X[i] = 0
@@ -167,7 +167,7 @@ class Application:
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                X = self.gauss_compacto(len(self.M), self.M, self.V)
+                X = self.calc_compact_gauss(len(self.M), self.M, self.V)
                 for i in range(len(X)):
                         if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
                             X[i] = 0
@@ -177,7 +177,7 @@ class Application:
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                X = self.gauss_jordan(len(self.M), self.M, self.V)
+                X = self.calc_gauss_jordan(len(self.M), self.M, self.V)
                 if X is None:
                     messagebox.showerror("Erro", "O sistema gerado é indeterminado.")
                 else:
@@ -190,34 +190,34 @@ class Application:
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                B = self.V.tolist()
-                aproximacao = [0] * len(self.M)
+                vector = self.V.tolist()
+                aprox = [0] * len(self.M)
                 X = [0] * len(self.M)
-                max_iter = 1000  # Defina o número máximo de iterações
-                e = 0.0001  # Defina a precisão desejada
-                iteracoes = [0]
-                if not self.criterio_colunas(self.M) or not self.criterio_linhas(self.M):
+                max_iter = 1000  
+                e = 0.0001  #precisao
+                iterations = [0]
+                if not self.column_convergence(self.M) or not self.line_convergence(self.M):
                     messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Colunas não satisfeito.")
                 else:
-                    self.jacobi(len(self.M), self.M.tolist(), B, aproximacao, e, max_iter, X, iteracoes)
-                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iteracoes[0]}"
+                    self.jacobi(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
+                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
                     messagebox.showinfo("Resultado", result_str)
 
         elif selected_option == "Calcular pelo método de Gauss-Seidel":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
-                B = self.V.tolist()
-                aproximacao = [0] * len(self.M)
+                vector = self.V.tolist()
+                aprox = [0] * len(self.M)
                 X = [0] * len(self.M)
-                max_iter = 1000  # Defina o número máximo de iterações
-                e = 0.0001  # Defina a precisão desejada
-                iteracoes = [0]
-                if not self.criterio_linhas(self.M) or not self.criterio_sassenfeld(self.M):
+                max_iter = 1000  # iteracoes
+                e = 0.0001  # precisao
+                iterations = [0]
+                if not self.line_convergence(self.M) or not self.sassenfeld_convergence_criterion(self.M):
                     messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Sassenfeld não satisfeito.")
                 else:
-                    self.gauss_seidel(len(self.M), self.M.tolist(), B, aproximacao, e, max_iter, X, iteracoes)
-                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iteracoes[0]}"
+                    self.gauss_seidel(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
+                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
                     messagebox.showinfo("Resultado", result_str)
 
         elif selected_option == "Calcular matriz inversa":
@@ -329,7 +329,7 @@ class Application:
 
 ############################################################################  DETERMINANTE
 
-    def calcular_determinante(self, matrix):
+    def calc_determinant(self, matrix):
             order = len(matrix)
             if order == 1:
                 return matrix[0][0]
@@ -340,7 +340,7 @@ class Application:
                         matrix_aux = np.delete(matrix, 0, axis=0)
                         matrix_aux = np.delete(matrix_aux, i, axis=1)
                         pivo = matrix[0][i] if i % 2 == 0 else -matrix[0][i]
-                        resp += pivo * self.calcular_determinante(matrix_aux)
+                        resp += pivo * self.calc_determinant(matrix_aux)
                 return resp
 
 ############################################################################ MATRIZ INVERSA
@@ -375,13 +375,13 @@ class Application:
     def confirm_inverse_matrix(self, inverse_matrix_selection):
         selected_inverse_matrix_option = inverse_matrix_selection.get()
         if selected_inverse_matrix_option == "Calcular Matriz Inversa por Gauss Compacto":
-            ordem = len(self.M)
-            inversa = self.inverse_matrix_gauss(ordem, self.M)
+            order = len(self.M)
+            inversa = self.inverse_matrix_gauss(order, self.M)
             if inversa is not None:
                 self.show_inverse_matrix(inversa)
         elif selected_inverse_matrix_option == "Calcular por Decomposição LU":
-            ordem = len(self.M)
-            inversa = self.inverse_matrix_lu(ordem, self.M)
+            order = len(self.M)
+            inversa = self.inverse_matrix_lu(order, self.M)
             if inversa is not None:
                 self.show_inverse_matrix(inversa)
 
@@ -410,86 +410,86 @@ class Application:
 
 
     ##### matriz inversa por decomposição LU
-    def aux_inverse_matrix_lu(self, ordem, matriz, L, U):
-        for i in range(ordem):
-            for j in range(ordem):
-                U[i][j] = matriz[i][j]
+    def aux_inverse_matrix_lu(self, order, matrix, triangular_matrix_L, triangular_matrix_U):
+        for i in range(order):
+            for j in range(order):
+                triangular_matrix_U[i][j] = matrix[i][j]
 
-        for k in range(ordem):
-            L[k][k] = 1.0
+        for k in range(order):
+            triangular_matrix_L[k][k] = 1.0
 
-            for i in range(k + 1, ordem):
-                L[i][k] = U[i][k] / U[k][k]
-                for j in range(k, ordem):
-                    U[i][j] -= L[i][k] * U[k][j]
+            for i in range(k + 1, order):
+                triangular_matrix_L[i][k] = triangular_matrix_U[i][k] / triangular_matrix_U[k][k]
+                for j in range(k, order):
+                    triangular_matrix_U[i][j] -= triangular_matrix_L[i][k] * triangular_matrix_U[k][j]
 
 
 
-    def inverse_matrix_lu(self, ordem, matriz):
-        L = [[0] * ordem for _ in range(ordem)]
-        U = [[0] * ordem for _ in range(ordem)]
-        identidade = [[1 if i == j else 0 for j in range(ordem)] for i in range(ordem)]
+    def inverse_matrix_lu(self, order, matrix):
+        triangular_matrix_L = [[0] * order for _ in range(order)]
+        triangular_matrix_U = [[0] * order for _ in range(order)]
+        ident = [[1 if i == j else 0 for j in range(order)] for i in range(order)]
 
-        self.aux_inverse_matrix_lu(ordem, matriz, L, U)
+        self.aux_inverse_matrix_lu(order, matrix, triangular_matrix_L, triangular_matrix_U)
 
-        y = [[0] * ordem for _ in range(ordem)]
+        y = [[0] * order for _ in range(order)]
 
-        # Sistema Ly = I
-        for k in range(ordem):
-            for i in range(ordem):
-                soma = sum(L[i][j] * y[j][k] for j in range(i))
-                y[i][k] = (identidade[i][k] - soma) / L[i][i]
+        # Ly = i
+        for k in range(order):
+            for i in range(order):
+                soma = sum(triangular_matrix_L[i][j] * y[j][k] for j in range(i))
+                y[i][k] = (ident[i][k] - soma) / triangular_matrix_L[i][i]
 
-        inversa = [[0] * ordem for _ in range(ordem)]
+        inversa = [[0] * order for _ in range(order)]
 
-        # Sistema Ux = y
-        for k in range(ordem):
-            for i in range(ordem - 1, -1, -1):
-                soma = sum(U[i][j] * inversa[j][k] for j in range(i + 1, ordem))
-                inversa[i][k] = (y[i][k] - soma) / U[i][i]
+        # Ux = y
+        for k in range(order):
+            for i in range(order - 1, -1, -1):
+                soma = sum(triangular_matrix_U[i][j] * inversa[j][k] for j in range(i + 1, order))
+                inversa[i][k] = (y[i][k] - soma) / triangular_matrix_U[i][i]
 
         return inversa
 
 
-    ##### matriz inversa por Gauss Compacto
+    ##### calcular matriz inversa por Gauss Compacto
 
-    def inverse_matrix_gauss(self, ordem, matriz):
-        matriz_aumentada = [[0] * (2 * ordem) for _ in range(ordem)]
+    def inverse_matrix_gauss(self, order, matrix):
+        augmented_matrix = [[0] * (2 * order) for _ in range(order)]
 
-        for i in range(ordem):
-            for j in range(ordem):
-                matriz_aumentada[i][j] = matriz[i][j]
-                matriz_aumentada[i][j + ordem] = 1.0 if i == j else 0.0
+        for i in range(order):
+            for j in range(order):
+                augmented_matrix[i][j] = matrix[i][j]
+                augmented_matrix[i][j + order] = 1.0 if i == j else 0.0
 
         # Gauss compacto
-        for i in range(ordem):
-            pivo = matriz_aumentada[i][i]
+        for i in range(order):
+            pivot = augmented_matrix[i][i]
 
-            if pivo == 0:
-                troca = False
+            if pivot == 0:
+                swap = False
 
-                for j in range(i + 1, ordem):
-                    if matriz_aumentada[j][i] != 0:
-                        troca = True
-                        matriz_aumentada[i], matriz_aumentada[j] = matriz_aumentada[j], matriz_aumentada[i]
+                for j in range(i + 1, order):
+                    if augmented_matrix[j][i] != 0:
+                        swap = True
+                        augmented_matrix[i], augmented_matrix[j] = augmented_matrix[j], augmented_matrix[i]
                         break
 
-                if not troca:
+                if not swap:
                     messagebox.showerror("Erro", "A matriz não é invertível")
                     return None
 
-                pivo = matriz_aumentada[i][i]
+                pivot = augmented_matrix[i][i]
 
-            for j in range(2 * ordem):
-                matriz_aumentada[i][j] /= pivo
+            for j in range(2 * order):
+                augmented_matrix[i][j] /= pivot
 
-            for k in range(ordem):
+            for k in range(order):
                 if k != i:
-                    fator = matriz_aumentada[k][i]
-                    for j in range(2 * ordem):
-                        matriz_aumentada[k][j] -= fator * matriz_aumentada[i][j]
+                    factor = augmented_matrix[k][i]
+                    for j in range(2 * order):
+                        augmented_matrix[k][j] -= factor * augmented_matrix[i][j]
 
-        inversa = [[matriz_aumentada[i][j + ordem] for j in range(ordem)] for i in range(ordem)]
+        inversa = [[augmented_matrix[i][j + order] for j in range(order)] for i in range(order)]
         return inversa
 
     
@@ -497,9 +497,9 @@ class Application:
         
 
 ################################################################ SISTEMAS TRIANGULARES       
-    def calcular_triangular_inferior(self, n, matrix, vector):
-        X = np.zeros(n)
-        for i in range(n):
+    def calc_lower_triangular(self, order, matrix, vector):
+        X = np.zeros(order)
+        for i in range(order):
             if i == 0:
                 X[0] = vector[0] / matrix[0][0]
             else:
@@ -509,14 +509,14 @@ class Application:
                 X[i] = (vector[i] - soma) / matrix[i][i]
         return X
 
-    def calcular_triangular_superior(self, n, matrix, vector):
-        X = np.zeros(n)
-        for i in range(n - 1, -1, -1):
-            if i == n - 1:
+    def calc_upper_triangular(self, order, matrix, vector):
+        X = np.zeros(order)
+        for i in range(order - 1, -1, -1):
+            if i == order - 1:
                 X[i] = vector[i] / matrix[i][i]
             else:
                 soma = 0
-                for j in range(i + 1, n):
+                for j in range(i + 1, order):
                     soma += matrix[i][j] * X[j]
                 X[i] = (vector[i] - soma) / matrix[i][i]
         return X
@@ -525,60 +525,60 @@ class Application:
   
   
    ###### decomposiçãoLU
-    def matriz_u(self, i, n, matrix, L, U):
-        for j in range(n):
+    def calc_triangular_matrix_U(self, i, order, matrix, triangular_matrix_L, triangular_matrix_U):
+        for j in range(order):
             if i == 0:
-                U[i][j] = matrix[i][j]
+                triangular_matrix_U[i][j] = matrix[i][j]
             else:
                 soma = 0
                 for k in range(i):
-                    soma += L[i][k] * U[k][j]
-                U[i][j] = matrix[i][j] - soma
+                    soma += triangular_matrix_L[i][k] * triangular_matrix_U[k][j]
+                triangular_matrix_U[i][j] = matrix[i][j] - soma
 
-    def matriz_l(self, j, n, matrix, L, U):
-        for i in range(n):
+    def calc_triangular_matrix_L(self, j, order, matrix, triangular_matrix_L, triangular_matrix_U):
+        for i in range(order):
             if j == 0:
-                L[i][j] = matrix[i][j] / U[j][j]
+                triangular_matrix_L[i][j] = matrix[i][j] / triangular_matrix_U[j][j]
             else:
                 soma = 0
                 for k in range(j):
-                    soma += L[i][k] * U[k][j]
-                L[i][j] = (matrix[i][j] - soma) / U[j][j]
+                    soma += triangular_matrix_L[i][k] * triangular_matrix_U[k][j]
+                triangular_matrix_L[i][j] = (matrix[i][j] - soma) / triangular_matrix_U[j][j]
 
-    def sistema_lu(self, n, L, U, B):
-        Y = np.zeros(n)
+    def aux_LU(self, order, triangular_matrix_L, triangular_matrix_U, vector):
+        Y = np.zeros(order)
 
-        # Ly = B
-        Y[0] = B[0] / L[0][0]
-        for i in range(1, n):
+        # Ly = b
+        Y[0] = vector[0] / triangular_matrix_L[0][0]
+        for i in range(1, order):
             soma = 0
             for j in range(i):
-                soma += L[i][j] * Y[j]
-            Y[i] = (B[i] - soma) / L[i][i]
+                soma += triangular_matrix_L[i][j] * Y[j]
+            Y[i] = (vector[i] - soma) / triangular_matrix_L[i][i]
 
         # Ux = y
-        X = np.zeros(n)
-        X[n - 1] = Y[n - 1] / U[n - 1][n - 1]
-        for i in range(n - 2, -1, -1):
+        X = np.zeros(order)
+        X[order - 1] = Y[order - 1] / triangular_matrix_U[order - 1][order - 1]
+        for i in range(order - 2, -1, -1):
             soma = 0
-            for j in range(i + 1, n):
-                soma += U[i][j] * X[j]
-            X[i] = (Y[i] - soma) / U[i][i]
+            for j in range(i + 1, order):
+                soma += triangular_matrix_U[i][j] * X[j]
+            X[i] = (Y[i] - soma) / triangular_matrix_U[i][i]
 
         return X
 
-    def decomposicao_lu(self, ordem, M, B):
-        U = np.zeros((ordem, ordem))
-        L = np.zeros((ordem, ordem))
+    def calc_LU_decomposition(self, ordem, matrix, vector):
+        triangular_matrix_U = np.zeros((ordem, ordem))
+        triangular_matrix_L = np.zeros((ordem, ordem))
 
         for i in range(ordem):
-            self.matriz_u(i, ordem, M, L, U)
-            self.matriz_l(i, ordem, M, L, U)
+            self.calc_triangular_matrix_U(i, ordem, matrix, triangular_matrix_L, triangular_matrix_U)
+            self.calc_triangular_matrix_L(i, ordem, matrix, triangular_matrix_L, triangular_matrix_U)
 
-        return L, U, B
+        return triangular_matrix_L, triangular_matrix_U, vector
     
     ###### cholesky
-    def simetrica(self, matrix):
+    def calc_simetric(self, matrix):
         order = len(matrix)
         for i in range(order):
             for j in range(order):
@@ -587,96 +587,96 @@ class Application:
         return True
     
 
-    def aux_cholesky(self, ordem, matriz, matriz_cholesky):
-        for i in range(ordem):
-            for j in range(ordem):
+    def aux_cholesky(self, order, matrix, cholesky_matrix):
+        for i in range(order):
+            for j in range(order):
                 if i == j:
                     if i == 0:
-                        matriz_cholesky[i][j] = np.sqrt(matriz[i][j])
+                        cholesky_matrix[i][j] = np.sqrt(matrix[i][j])
                     else:
                         soma = 0
                         for k in range(i):
-                            soma += matriz_cholesky[i][k] ** 2
-                        matriz_cholesky[i][j] = np.sqrt(matriz[i][j] - soma)
+                            soma += cholesky_matrix[i][k] ** 2
+                        cholesky_matrix[i][j] = np.sqrt(matrix[i][j] - soma)
                 else:
                     if j < i:
                         soma = 0
                         for k in range(j):
-                            soma += matriz_cholesky[i][k] * matriz_cholesky[j][k]
-                        matriz_cholesky[i][j] = (matriz[i][j] - soma) / matriz_cholesky[j][j]
+                            soma += cholesky_matrix[i][k] * cholesky_matrix[j][k]
+                        cholesky_matrix[i][j] = (matrix[i][j] - soma) / cholesky_matrix[j][j]
                     else:
-                        matriz_cholesky[i][j] = 0
+                        cholesky_matrix[i][j] = 0
 
-    def cholesky(self, ordem, matriz, vetor_ind_cholesky):
-        matriz_l = np.zeros((ordem, ordem))
-        self.aux_cholesky(ordem, matriz, matriz_l)
+    def calc_cholesky(self, order, matrix, vector):
+        triangular_matrix_L = np.zeros((order, order))
+        self.aux_cholesky(order, matrix, triangular_matrix_L)
         
-        # Resolvendo o sistema Ly = b utilizando a função de matriz triangular inferior
-        vetor_y = np.zeros(ordem)
-        vetor_y = self.calcular_triangular_inferior(ordem, matriz_l, vetor_ind_cholesky)  
+        # Ly = b utilizando a função de matriz triangular inferior
+        vector_y = np.zeros(order)
+        vector_y = self.calc_lower_triangular(order, triangular_matrix_L, vector)  
         
-        # Fazer a matriz transposta de L
-        matriz_lt = matriz_l.T
+        # matriz transposta de L pelo .T do numpy
+        transposed_triangular_matrix_L = triangular_matrix_L.T
         
-        # Resolvendo o sistema L^t x = y utilizando a função de matriz triangular superior
-        vetor_sol_cholesky = np.zeros(ordem)
-        vetor_sol_cholesky = self.calcular_triangular_superior(ordem, matriz_lt, vetor_y)  
+        # L^t x = y utilizando a função de matriz triangular superior
+        solution_vector = np.zeros(order)
+        solution_vector = self.calc_upper_triangular(order, transposed_triangular_matrix_L, vector_y)  
         
-        return vetor_sol_cholesky
+        return solution_vector
 
 
 
     ###### gauss compacto
 
-    def gauss_compacto(self, n, M, B):
-        X = np.zeros(n)
+    def calc_compact_gauss(self, order, matrix, vector):
+        X = np.zeros(order)
 
-        for k in range(n - 1):
-            for i in range(k + 1, n):
-                aux = M[i][k] / M[k][k]
-                B[i] -= aux * B[k]
-                for j in range(k, n):
-                    M[i][j] -= aux * M[k][j]
+        for k in range(order - 1):
+            for i in range(k + 1, order):
+                temp = matrix[i][k] / matrix[k][k]
+                vector[i] -= temp * vector[k]
+                for j in range(k, order):
+                    matrix[i][j] -= temp * matrix[k][j]
 
-        X[n - 1] = B[n - 1] / M[n - 1][n - 1]
+        X[order - 1] = vector[order - 1] / matrix[order - 1][order - 1]
 
-        for i in range(n - 2, -1, -1):
-            aux = B[i]
-            for j in range(i + 1, n):
-                aux -= M[i][j] * X[j]
-            X[i] = aux / M[i][i]
+        for i in range(order - 2, -1, -1):
+            temp = vector[i]
+            for j in range(i + 1, order):
+                temp -= matrix[i][j] * X[j]
+            X[i] = temp / matrix[i][i]
 
         return X
     
 
     ###### gauss jordan
-    def gauss_jordan(self, n, M, B):
-        matrizAumentada = np.zeros((n, n + 1))
+    def calc_gauss_jordan(self, order, matrix, vector):
+        augmented_matrix = np.zeros((order, order + 1))
 
-        for i in range(n):
-            for j in range(n + 1):
-                if j == n:
-                    matrizAumentada[i][j] = B[i]
+        for i in range(order):
+            for j in range(order + 1):
+                if j == order:
+                    augmented_matrix[i][j] = vector[i]
                 else:
-                    matrizAumentada[i][j] = M[i][j]
+                    augmented_matrix[i][j] = matrix[i][j]
 
-        for i in range(n):
-            pivo = matrizAumentada[i][i]
+        for i in range(order):
+            pivo = augmented_matrix[i][i]
             if pivo == 0:
                 return None  # Sistema indeterminado
             else:
-                for j in range(i, n + 1):
-                    matrizAumentada[i][j] /= pivo
+                for j in range(i, order + 1):
+                    augmented_matrix[i][j] /= pivo
 
-                for k in range(n):
+                for k in range(order):
                     if k != i:
-                        fator = matrizAumentada[k][i]
-                        for j in range(i, n + 1):
-                            matrizAumentada[k][j] -= fator * matrizAumentada[i][j]
+                        factor = augmented_matrix[k][i]
+                        for j in range(i, order + 1):
+                            augmented_matrix[k][j] -= factor * augmented_matrix[i][j]
 
-        X = np.zeros(n)
-        for i in range(n):
-            X[i] = matrizAumentada[i][n]
+        X = np.zeros(order)
+        for i in range(order):
+            X[i] = augmented_matrix[i][order]
 
         return X
     
@@ -686,112 +686,112 @@ class Application:
 
     ###### metodos auxiliares para os metodos iterativos
 
-    def criterio_colunas(self, B):
-        valor_max = -1
-        for i in range(len(B)):
-            aux = 0
-            for j in range(len(B)):
+    def column_convergence(self, vector):
+        max_value = -1
+        for i in range(len(vector)):
+            temp = 0
+            for j in range(len(vector)):
                 if i != j:
-                    aux += abs(B[j][i])
-            if aux > valor_max:
-                valor_max = aux
-        return valor_max < 1
+                    aux += abs(vector[j][i])
+            if temp > max_value:
+                max_value = temp
+        return max_value < 1
 
-    def criterio_linhas(self, B):
-        valor_max = -1
-        for i in range(len(B)):
-            aux = 0
-            for j in range(len(B)):
+    def line_convergence(self, vector):
+        max_value = -1
+        for i in range(len(vector)):
+            temp = 0
+            for j in range(len(vector)):
                 if i != j:
-                    aux += abs(B[j][i])
-            if aux > valor_max:
-                valor_max = aux
-        return valor_max < 1
+                    temp += abs(vector[j][i])
+            if temp > max_value:
+                max_value = temp
+        return max_value < 1
 
-    def criterio_sassenfeld(self, B):
-        auxB = [0] * len(B)
-        for i in range(len(B)):
-            for j in range(len(B)):
+    def sassenfeld_convergence_criterion(self, vector):
+        temp_vec = [0] * len(vector)
+        for i in range(len(vector)):
+            for j in range(len(vector)):
                 if j < i:
-                    auxB[i] += B[i][j] * auxB[j]
+                    temp_vec[i] += vector[i][j] * temp_vec[j]
                 else:
-                    auxB[i] += B[i][j]
+                    temp_vec[i] += vector[i][j]
         
-        maior = auxB[0]
-        for i in range(1, len(B)):
-            if auxB[i] > maior:
-                maior = auxB[i]
-        return maior < 1
+        largest_element = temp_vec[0]
+        for i in range(1, len(vector)):
+            if temp_vec[i] > largest_element:
+                largest_element = temp_vec[i]
+        return largest_element < 1
 
-    def calcula_erro(self, initialX, solution):
-        erro = abs(solution[0] - initialX[0])
-        valor_max = abs(solution[0])
+    def calc_error(self, initial_x, solution):
+        error = abs(solution[0] - initial_x[0])
+        max_value = abs(solution[0])
 
-        for i in range(1, len(initialX)):
-            if abs(solution[i] - initialX[i]) > erro:
-                erro = abs(solution[i] - initialX[i])
-            if abs(solution[i]) > valor_max:
-                valor_max = abs(solution[i])
+        for i in range(1, len(initial_x)):
+            if abs(solution[i] - initial_x[i]) > error:
+                error = abs(solution[i] - initial_x[i])
+            if abs(solution[i]) > max_value:
+                max_value = abs(solution[i])
 
-        return erro / valor_max
+        return error / max_value
     
     ###### jacobi
 
-    def jacobi(n, M, vetorB, aproximacao, e, maximo_iteracoes, X, iteracoes):
-        temp = [0] * n
+    def jacobi(order, matrix, vector, aprox, e, max_iterations, solution, iterations):
+        temp = [0] * order
 
-        for iter in range(1, maximo_iteracoes + 1):
+        for iteration in range(1, max_iterations + 1):
             erro = 0.0
 
-            for i in range(n):
-                temp[i] = vetorB[i]
-                for j in range(n):
+            for i in range(order):
+                temp[i] = vector[i]
+                for j in range(order):
                     if i != j:
-                        temp[i] -= M[i][j] * aproximacao[j]
-                temp[i] /= M[i][i]
+                        temp[i] -= matrix[i][j] * aprox[j]
+                temp[i] /= matrix[i][i]
 
-            for i in range(n):
-                erro += (temp[i] - aproximacao[i]) * (temp[i] - aproximacao[i])
+            for i in range(order):
+                erro += (temp[i] - aprox[i]) * (temp[i] - aprox[i])
 
-            for i in range(n):
-                aproximacao[i] = temp[i]
+            for i in range(order):
+                aprox[i] = temp[i]
 
             if erro < e:
                 break
 
-        for i in range(n):
-            X[i] = aproximacao[i]
+        for i in range(order):
+            solution[i] = aprox[i]
 
-        iteracoes[0] = iter
-        return X
+        iterations[0] = iteration
+        return solution
     
 
     ###### gauss seidel
 
-    def gauss_seidel(ordem, matriz, B, aproximacao, e, maximo_iteracoes, X, iteracoes):
-        aprox_atual = aproximacao.copy()
-        aprox_anterior = aproximacao.copy()
+    def gauss_seidel(order, matrix, vector, aprox, e, max_iterations, solution, iterations):
+        current = aprox.copy()
+        previous  = aprox.copy()
 
-        for iteracao in range(maximo_iteracoes):
-            aprox_anterior = aprox_atual.copy()
+        for iteration in range(max_iterations):
+            previous  = current.copy()
 
-            for i in range(ordem):
+            for i in range(order):
                 soma = 0
-                for j in range(ordem):
+                for j in range(order):
                     if j != i:
-                        soma += matriz[i][j] * aprox_atual[j]
-                aprox_atual[i] = (B[i] - soma) / matriz[i][i]
+                        soma += matrix[i][j] * current[j]
+                current[i] = (vector[i] - soma) / matrix[i][i]
 
-            diferenca = sum(abs(aprox_atual[i] - aprox_anterior[i]) for i in range(ordem))
+            difference = sum(abs(current[i] - previous [i]) for i in range(order))
 
-            if diferenca < e:
+            if difference < e:
                 break
 
-        for i in range(ordem):
-            X[i] = aprox_atual[i]
+        for i in range(order):
+            solution[i] = current[i]
 
-        iteracoes[0] = iteracao
-        return X
+        iterations[0] = iteration
+        return solution
 
 
 ###################################################################### MAIN
