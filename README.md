@@ -21,10 +21,7 @@ This repository contains study resources and one project of a numerical methods 
 6. **Iterative Methods:**
     - **Jacobi-Richardson Method**
     - **Gauss-Seidel Method**
-7. **Bisection Method**
-8. **Newton-Raphson Method**
-9. **Finite Difference Method**
-10. **Polynomial Interpolation**
+
 
 #### Calculator Project
 

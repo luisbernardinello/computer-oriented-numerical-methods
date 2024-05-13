@@ -9,7 +9,7 @@ class Application:
     def __init__(self, master):
         self.master = master
         self.master.title("Calculadora MNC")
-        self.master.resizable(False, False)  # Impede redimensionamento
+        self.master.resizable(False, False) 
         
         ##### centralizar janela  
         window_width = 400  
@@ -44,10 +44,10 @@ class Application:
         self.create_widgets()
 
     def create_widgets(self):
-        self.frame = tk.Frame(self.master, bg="white")
+        self.frame = tk.Frame(self.master, bg="gray89")
         self.frame.pack(fill=tk.BOTH, expand=True)
 
-        self.menu_label = tk.Label(self.frame, text="Por favor, escolha uma das opções abaixo:", bg="white", font=("Trebuchet MS", 9, "bold"))
+        self.menu_label = tk.Label(self.frame, text="Por favor, escolha uma das opções abaixo:", bg="gray89", font=("Trebuchet MS", 9, "bold"))
         self.menu_label.pack()
 
         
@@ -81,7 +81,7 @@ class Application:
 
         # rotulos e radiobuttons para cada label
         for group_label, options in option_groups.items():
-            group_label_widget = tk.Label(self.frame, text=group_label, bg="white", font=("Trebuchet MS", 9, "bold"))
+            group_label_widget = tk.Label(self.frame, text=group_label, bg="gray89", font=("Trebuchet MS", 9, "bold"))
             group_label_widget.pack(anchor=tk.W)
 
             for option in options:
@@ -90,7 +90,7 @@ class Application:
                     text=option,
                     variable=self.selection,
                     value=option,
-                    bg="white"
+                    bg="gray89"
                 ).pack(anchor=tk.W, padx=20, pady=2)
 
         self.confirm_button = tk.Button(self.frame, text="Confirmar", command=self.handle_selection)
@@ -199,7 +199,7 @@ class Application:
                 if not self.column_convergence(self.M) or not self.line_convergence(self.M):
                     messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Colunas não satisfeito.")
                 else:
-                    self.jacobi(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
+                    self.calc_jacobi(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
                     result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
                     messagebox.showinfo("Resultado", result_str)
 
@@ -216,7 +216,7 @@ class Application:
                 if not self.line_convergence(self.M) or not self.sassenfeld_convergence_criterion(self.M):
                     messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Sassenfeld não satisfeito.")
                 else:
-                    self.gauss_seidel(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
+                    self.calc_gauss_seidel(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
                     result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
                     messagebox.showinfo("Resultado", result_str)
 
@@ -238,10 +238,10 @@ class Application:
 
         
 
-        self.matrix_frame = tk.Frame(self.matrix_window, bg="white")
+        self.matrix_frame = tk.Frame(self.matrix_window, bg="gray89")
         self.matrix_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.order_label = tk.Label(self.matrix_frame, text="Ordem da matriz:", bg="white")
+        self.order_label = tk.Label(self.matrix_frame, text="Ordem da matriz:", bg="gray89")
         self.order_label.grid(row=0, column=0, padx=5, pady=5)
 
         self.order_entry = tk.Entry(self.matrix_frame, width=5)
@@ -295,10 +295,10 @@ class Application:
         self.vector_window.title("Entrar com o vetor de termos independentes")
         self.vector_window.resizable(False, False)
 
-        self.vector_frame = tk.Frame(self.vector_window, bg="white")
+        self.vector_frame = tk.Frame(self.vector_window, bg="gray89")
         self.vector_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.order_label = tk.Label(self.vector_frame, text=f"Tamanho do vetor (ordem da matriz: {self.order}):", bg="white")
+        self.order_label = tk.Label(self.vector_frame, text=f"Tamanho do vetor (ordem da matriz: {self.order}):", bg="gray89")
         self.order_label.grid(row=0, column=0, padx=5, pady=5)
 
         self.vector_entries = []
@@ -366,7 +366,7 @@ class Application:
                 text=option,
                 variable=inverse_matrix_selection,
                 value=option,
-                bg="white"
+                bg="gray89"
             ).pack(anchor=tk.W)
 
         confirm_button_inverse_matrix = tk.Button(inverse_matrix_window, text="Confirmar", command=lambda: self.confirm_inverse_matrix(inverse_matrix_selection))
@@ -686,58 +686,47 @@ class Application:
 
     ###### metodos auxiliares para os metodos iterativos
 
-    def column_convergence(self, vector):
-        max_value = -1
-        for i in range(len(vector)):
-            temp = 0
-            for j in range(len(vector)):
+    def column_convergence(self, matrix):
+        n = len(matrix)
+        for j in range(n):
+            diagonal_sum = 0
+            for i in range(n):
                 if i != j:
-                    temp += abs(vector[j][i])
-            if temp > max_value:
-                max_value = temp
-        return max_value < 1
+                    diagonal_sum += abs(matrix[i][j])
+            if abs(matrix[j][j]) <= diagonal_sum:
+                return False
+        return True
 
-    def line_convergence(self, vector):
-        max_value = -1
-        for i in range(len(vector)):
-            temp = 0
-            for j in range(len(vector)):
+    def line_convergence(self, matrix):
+        n = len(matrix)
+        for i in range(n):
+            diagonal_sum = 0
+            for j in range(n):
                 if i != j:
-                    temp += abs(vector[j][i])
-            if temp > max_value:
-                max_value = temp
-        return max_value < 1
+                    diagonal_sum += abs(matrix[i][j])
+            if abs(matrix[i][i]) <= diagonal_sum:
+                return False
+        return True
 
-    def sassenfeld_convergence_criterion(self, vector):
-        temp_vec = [0] * len(vector)
-        for i in range(len(vector)):
-            for j in range(len(vector)):
-                if j < i:
-                    temp_vec[i] += vector[i][j] * temp_vec[j]
-                else:
-                    temp_vec[i] += vector[i][j]
-        
-        largest_element = temp_vec[0]
-        for i in range(1, len(vector)):
-            if temp_vec[i] > largest_element:
-                largest_element = temp_vec[i]
+
+    def sassenfeld_convergence_criterion(self, matrix):
+        n = len(matrix)
+        temp_vec = [0] * n
+
+        for i in range(n):
+            temp_sum = 0
+            for j in range(n):
+                if j != i:
+                    temp_sum += abs(matrix[i][j])
+            temp_vec[i] = temp_sum / abs(matrix[i][i])
+
+        largest_element = max(temp_vec)
         return largest_element < 1
 
-    def calc_error(self, initial_x, solution):
-        error = abs(solution[0] - initial_x[0])
-        max_value = abs(solution[0])
 
-        for i in range(1, len(initial_x)):
-            if abs(solution[i] - initial_x[i]) > error:
-                error = abs(solution[i] - initial_x[i])
-            if abs(solution[i]) > max_value:
-                max_value = abs(solution[i])
+    ###### Método de Jacobi
 
-        return error / max_value
-    
-    ###### jacobi
-
-    def jacobi(order, matrix, vector, aprox, e, max_iterations, solution, iterations):
+    def calc_jacobi(self,order, matrix, vector, aprox, e, max_iterations, solution, iterations):
         temp = [0] * order
 
         for iteration in range(1, max_iterations + 1):
@@ -766,9 +755,9 @@ class Application:
         return solution
     
 
-    ###### gauss seidel
+    ###### Método de Gauss Seidel
 
-    def gauss_seidel(order, matrix, vector, aprox, e, max_iterations, solution, iterations):
+    def calc_gauss_seidel(self,order, matrix, vector, aprox, e, max_iterations, solution, iterations):
         current = aprox.copy()
         previous  = aprox.copy()
 
