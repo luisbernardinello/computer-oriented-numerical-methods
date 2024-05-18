@@ -97,7 +97,6 @@ class Application:
         self.confirm_button.pack()
 
 
-    ##### lida com a seleção
     def handle_selection(self):
         selected_option = self.selection.get()
         
@@ -115,13 +114,14 @@ class Application:
                 messagebox.showerror("Erro", "Nenhuma matriz foi inserida.")
             else:
                 determinant = self.calc_determinant(self.M)
-                messagebox.showinfo("Resultado", f"O determinante é: {determinant:.3f}")
+                messagebox.showinfo("Resultado", f"O determinante é: {round(determinant, 4)}")
 
         elif selected_option == "Calcular o sistema triangular inferior":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
                 X = self.calc_lower_triangular(len(self.M), self.M, self.V)
+                X = [round(x, 4) for x in X]
                 messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
 
         elif selected_option == "Calcular o sistema triangular superior":
@@ -129,6 +129,7 @@ class Application:
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
                 X = self.calc_upper_triangular(len(self.M), self.M, self.V)
+                X = [round(x, 4) for x in X]
                 messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
 
         elif selected_option == "Calcular pelo método de Decomposicao LU":
@@ -141,9 +142,7 @@ class Application:
                 else:
                     triangular_matrix_L, triangular_matrix_U, vector = self.calc_LU_decomposition(len(self.M), self.M, self.V)
                     X = self.aux_LU(len(self.M), triangular_matrix_L, triangular_matrix_U, vector)
-                    for i in range(len(X)):
-                        if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
-                            X[i] = 0
+                    X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
                     messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
 
         elif selected_option == "Calcular pelo método de Cholesky":
@@ -158,9 +157,7 @@ class Application:
                     messagebox.showerror("Erro", "A matriz inserida não é simétrica.")
                 else:
                     X = self.calc_cholesky(len(self.M), self.M, self.V)
-                    for i in range(len(X)):
-                        if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
-                            X[i] = 0
+                    X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
                     messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
 
         elif selected_option == "Calcular pelo método de Gauss Compacto":
@@ -168,9 +165,7 @@ class Application:
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
             else:
                 X = self.calc_compact_gauss(len(self.M), self.M, self.V)
-                for i in range(len(X)):
-                        if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
-                            X[i] = 0
+                X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
                 messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
 
         elif selected_option == "Calcular pelo método de Gauss Jordan":
@@ -181,11 +176,9 @@ class Application:
                 if X is None:
                     messagebox.showerror("Erro", "O sistema gerado é indeterminado.")
                 else:
-                    for i in range(len(X)):
-                        if abs(X[i]) < 1e-10:  # Limiar de tolerância para valores muito proximos de zero para printar zero
-                            X[i] = 0
+                    X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
                     messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-                    
+
         elif selected_option == "Calcular pelo método de Jacobi":
             if not hasattr(self, 'M') or not hasattr(self, 'V'):
                 messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
@@ -194,12 +187,13 @@ class Application:
                 aprox = [0] * len(self.M)
                 X = [0] * len(self.M)
                 max_iter = 1000  
-                e = 0.0001  #precisao
+                e = 0.0001  # precisao
                 iterations = [0]
                 if not self.column_convergence(self.M) or not self.line_convergence(self.M):
                     messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Colunas não satisfeito.")
                 else:
                     self.calc_jacobi(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
+                    X = [round(x, 4) for x in X]
                     result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
                     messagebox.showinfo("Resultado", result_str)
 
@@ -217,6 +211,7 @@ class Application:
                     messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Sassenfeld não satisfeito.")
                 else:
                     self.calc_gauss_seidel(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
+                    X = [round(x, 4) for x in X]
                     result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
                     messagebox.showinfo("Resultado", result_str)
 
@@ -225,7 +220,6 @@ class Application:
                 messagebox.showerror("Erro", "Matriz não foi inserida")
             else:
                 self.inverse_matrix_calculator()
-                
 
 
 
@@ -387,20 +381,18 @@ class Application:
 
 
     def show_inverse_matrix(self, inversa):
-        
         result_window = tk.Toplevel(self.master)
         result_window.title("Resultado da Matriz Inversa")
-        
         result_window.resizable(False, False)
 
-        #  label para o resultado
+        # Label para o resultado
         result_label = tk.Label(result_window, text="Matriz Inversa:")
         result_label.grid(row=0, column=0, columnspan=len(inversa[0]))
 
-        # elementos da matriz como labels
+        # Elementos da matriz como labels
         for i, row in enumerate(inversa):
             for j, cell in enumerate(row):
-                cell_label = tk.Label(result_window, text=str(cell), relief=tk.RIDGE, width=5, height=2)
+                cell_label = tk.Label(result_window, text=f"{round(cell, 4)}", relief=tk.RIDGE, width=10, height=2)
                 cell_label.grid(row=i+1, column=j, padx=5, pady=5)
 
         close_button = tk.Button(result_window, text="Fechar", command=result_window.destroy)
