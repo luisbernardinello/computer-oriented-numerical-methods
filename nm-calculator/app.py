@@ -47,7 +47,7 @@ class Application:
         self.frame = tk.Frame(self.master, bg="gray89")
         self.frame.pack(fill=tk.BOTH, expand=True)
 
-        self.menu_label = tk.Label(self.frame, text="Por favor, escolha uma das opções abaixo:", bg="gray89", font=("Trebuchet MS", 9, "bold"))
+        self.menu_label = tk.Label(self.frame, text="Por favor, escolha uma das opções abaixo:", bg="LightBlue", font=("Trebuchet MS", 9, "bold"))
         self.menu_label.pack()
 
         
@@ -81,7 +81,7 @@ class Application:
 
         # rotulos e radiobuttons para cada label
         for group_label, options in option_groups.items():
-            group_label_widget = tk.Label(self.frame, text=group_label, bg="gray89", font=("Trebuchet MS", 9, "bold"))
+            group_label_widget = tk.Label(self.frame, text=group_label, bg="LightBlue", font=("Trebuchet MS", 9, "bold"))
             group_label_widget.pack(anchor=tk.W)
 
             for option in options:

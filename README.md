@@ -12,7 +12,7 @@ This repository contains study resources and one project of a numerical methods 
 
 
 ## The Methods
-
+.
 1. **Gauss-Jordan Method**
 2. **LU Decomposition Method**
 3. **Compact Gauss Method**
@@ -21,6 +21,9 @@ This repository contains study resources and one project of a numerical methods 
 6. **Iterative Methods:**
     - **Jacobi-Richardson Method**
     - **Gauss-Seidel Method**
+
+.
+1. **Curve-Fitting**
 
 
 #### Calculator Project
