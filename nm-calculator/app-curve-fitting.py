@@ -8,7 +8,7 @@ class NumericalMethodsCalculator(tk.Tk):
         super().__init__()
         self.geometry('600x400')
         self.resizable(0, 0)
-        self.title('Numerical Methods Calculator')
+        self.title('Calculadora de Metodos Numericos')
         self.create_main_menu()
 
     def create_main_menu(self):
@@ -16,11 +16,11 @@ class NumericalMethodsCalculator(tk.Tk):
         self.menu_frame.pack(expand=True)
 
         options = [
-            "Calcular polinomio interpolado por Newton",
-            "Calcular polinomio interpolado por Newton-Gregory",
-            "Ajustar os pontos tabelados a uma reta da forma y=a0+a1x",
-            "Ajustar os pontos tabelados a um polinomio de grau desejado",
-            "Ajustar os pontos tabelados a uma curva exponencial da forma y=ab^x"
+            "Calcular polinomio interpolador de Newton",
+            "Calcular polinomio interpolador de Newton-Gregory",
+            "Ajustar os pontos tabelados em uma reta da forma y=a0+a1x",
+            "Ajustar os pontos tabelados em um polinomio de grau desejado",
+            "Ajustar os pontos tabelados em uma curva exponencial da forma y=ab^x"
         ]
 
         commands = [
@@ -32,7 +32,7 @@ class NumericalMethodsCalculator(tk.Tk):
         ]
 
         for option, command in zip(options, commands):
-            button = tk.Button(self.menu_frame, text=option, command=command, font=('Calibri', 12), bg='LightBlue', fg='Red', width=50)
+            button = tk.Button(self.menu_frame, text=option, command=command, font=('Calibri', 12), bg='LightBlue', fg='Red', width=60)
             button.pack(pady=10)
 
     def create_points_entries(self, window, num_points):
@@ -63,13 +63,13 @@ class NumericalMethodsCalculator(tk.Tk):
                 points.append((x, y))
             return points
         except ValueError:
-            messagebox.showerror("Error", "Invalid input in points. Please enter valid numbers.")
+            messagebox.showerror("Erro", "Input Invalido. Por favor, entre com numeros validos.")
             return None
 
     def open_newton_window(self):
         window = tk.Toplevel(self)
         window.geometry('600x400')
-        window.title('Polinomio Interpolado por Newton')
+        window.title('Polinomio Interpolador de Newton')
 
         def show_points_entries():
             try:
@@ -81,7 +81,7 @@ class NumericalMethodsCalculator(tk.Tk):
                 confirm_button.pack_forget()
 
                 points_entries = self.create_points_entries(window, num_points)
-                tk.Label(window, text="Enter x value:", font=('Calibri', 12)).pack(padx=5, pady=5)
+                tk.Label(window, text="Entre com o valor de x:", font=('Calibri', 12)).pack(padx=5, pady=5)
                 x_entry = tk.Entry(window, font=('Calibri', 12))
                 x_entry.pack(padx=5, pady=5)
 
@@ -96,46 +96,45 @@ class NumericalMethodsCalculator(tk.Tk):
                             return
 
                         def divided_diff_table(points, n):
-                            y = np.zeros((n, n))
+                            Y = np.zeros((n, n))
                             for i in range(n):
-                                y[i][0] = points[i][1]
+                                Y[i][0] = points[i][1]
                             for i in range(1, n):
                                 for j in range(n - i):
-                                    y[j][i] = (y[j + 1][i - 1] - y[j][i - 1]) / (points[j + i][0] - points[j][0])
-                            return y
+                                    Y[j][i] = (Y[j + 1][i - 1] - Y[j][i - 1]) / (points[j + i][0] - points[j][0])
+                            return Y
 
-                        def newton_interpolation(y, x, points, n):
-                            result = y[0][0]
+                        def newton_interpolation(Y, x, points, n):
+                            result = Y[0][0]
+                            product_term = 1.0
                             for i in range(1, n):
-                                term = y[0][i]
-                                for j in range(i):
-                                    term *= (x - points[j][0])
-                                result += term
+                                product_term *= (x - points[i - 1][0])
+                                result += product_term * Y[0][i]
                             return result
 
-                        y = divided_diff_table(points, num_points)
-                        result = newton_interpolation(y, x, points, num_points)
+                        Y = divided_diff_table(points, num_points)
+                        result = newton_interpolation(Y, x, points, num_points)
                         result_label.config(text=f'P({x}) = {result:.4f}')
 
                     except Exception as e:
-                        messagebox.showerror("Error", str(e))
+                        messagebox.showerror("Erro", str(e))
 
-                tk.Button(window, text="Calculate", command=calculate_newton, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
+                tk.Button(window, text="Calcular", command=calculate_newton, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
 
             except ValueError:
-                messagebox.showerror("Error", "Invalid number of points. Please enter a number between 1 and 100.")
+                messagebox.showerror("Erro", "Numero invalido de pontos. Por favor entre com numero de 1 a 100.")
 
-        num_points_label = tk.Label(window, text="Enter number of points:", font=('Calibri', 12))
+        num_points_label = tk.Label(window, text="Entre com o numero de pontos:", font=('Calibri', 12))
         num_points_label.pack(padx=5, pady=5)
         num_points_entry = tk.Entry(window, font=('Calibri', 12))
         num_points_entry.pack(padx=5, pady=5)
-        confirm_button = tk.Button(window, text="Confirm", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
+        confirm_button = tk.Button(window, text="Confirmar", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
         confirm_button.pack(padx=5, pady=5)
 
     def open_newton_gregory_window(self):
         window = tk.Toplevel(self)
         window.geometry('600x400')
-        window.title('Polinomio Interpolado por Newton-Gregory')
+        window.title('Polinomio Interpolador de Newton-Gregory')
 
         def show_points_entries():
             try:
@@ -147,7 +146,7 @@ class NumericalMethodsCalculator(tk.Tk):
                 confirm_button.pack_forget()
 
                 points_entries = self.create_points_entries(window, num_points)
-                tk.Label(window, text="Enter x value:", font=('Calibri', 12)).pack(padx=5, pady=5)
+                tk.Label(window, text="Entre com o valor de x :", font=('Calibri', 12)).pack(padx=5, pady=5)
                 x_entry = tk.Entry(window, font=('Calibri', 12))
                 x_entry.pack(padx=5, pady=5)
 
@@ -162,47 +161,45 @@ class NumericalMethodsCalculator(tk.Tk):
                             return
 
                         def gregory_diff_table(points, n):
-                            y = np.zeros((n, n))
+                            Y = np.zeros((n, n))
                             for i in range(n):
-                                y[i][0] = points[i][1]
+                                Y[i][0] = points[i][1]
                             for i in range(1, n):
                                 for j in range(n - i):
-                                    y[j][i] = y[j + 1][i - 1] - y[j][i - 1]
-                            return y
+                                    Y[j][i] = Y[j + 1][i - 1] - Y[j][i - 1]
+                            return Y
 
-                        def newton_gregory_interpolation(y, x, points, n, h):
+                        def newton_gregory_interpolation(Y, x, points, n, h):
                             s = (x - points[0][0]) / h
-                            result = y[0][0]
+                            result = Y[0][0]
+                            product_term = 1.0
                             for i in range(1, n):
-                                term = y[0][i]
-                                for j in range(i):
-                                    term *= (s - j)
-                                term /= math.factorial(i)
-                                result += term
+                                product_term *= (s - (i - 1))
+                                result += (product_term * Y[0][i]) / math.factorial(i)
                             return result
 
                         h = points[1][0] - points[0][0]
                         for i in range(1, num_points):
                             if points[i][0] - points[i - 1][0] != h:
-                                raise ValueError("Points are not equally spaced for Newton-Gregory interpolation.")
+                                raise ValueError("Pontos não estão igualmente espaçados para a Interpolação de Newton-Gregory.")
 
-                        y = gregory_diff_table(points, num_points)
-                        result = newton_gregory_interpolation(y, x, points, num_points, h)
+                        Y = gregory_diff_table(points, num_points)
+                        result = newton_gregory_interpolation(Y, x, points, num_points, h)
                         result_label.config(text=f'P({x}) = {result:.4f}')
 
                     except Exception as e:
-                        messagebox.showerror("Error", str(e))
+                        messagebox.showerror("Erro", str(e))
 
-                tk.Button(window, text="Calculate", command=calculate_newton_gregory, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
+                tk.Button(window, text="Calcular", command=calculate_newton_gregory, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
 
             except ValueError:
-                messagebox.showerror("Error", "Invalid number of points. Please enter a number between 1 and 100.")
+                messagebox.showerror("Erro", "Numero invalido de pontos. Por favor entre com numero de 1 a 100.")
 
-        num_points_label = tk.Label(window, text="Enter number of points:", font=('Calibri', 12))
+        num_points_label = tk.Label(window, text="Entre com o número de pontos:", font=('Calibri', 12))
         num_points_label.pack(padx=5, pady=5)
         num_points_entry = tk.Entry(window, font=('Calibri', 12))
         num_points_entry.pack(padx=5, pady=5)
-        confirm_button = tk.Button(window, text="Confirm", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
+        confirm_button = tk.Button(window, text="Confirmar", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
         confirm_button.pack(padx=5, pady=5)
 
     def open_linear_fit_window(self):
@@ -239,18 +236,18 @@ class NumericalMethodsCalculator(tk.Tk):
                         result_label.config(text=f'y = {c:.4f} + {m:.4f}x')
 
                     except Exception as e:
-                        messagebox.showerror("Error", str(e))
+                        messagebox.showerror("Erro", str(e))
 
-                tk.Button(window, text="Calculate", command=calculate_linear_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
+                tk.Button(window, text="Calcular", command=calculate_linear_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
 
             except ValueError:
-                messagebox.showerror("Error", "Invalid number of points. Please enter a number between 1 and 100.")
+                messagebox.showerror("Erro", "Numero invalido de pontos. Por favor entre com numero de 1 a 100.")
 
-        num_points_label = tk.Label(window, text="Enter number of points:", font=('Calibri', 12))
+        num_points_label = tk.Label(window, text="Entre com o número de pontos:", font=('Calibri', 12))
         num_points_label.pack(padx=5, pady=5)
         num_points_entry = tk.Entry(window, font=('Calibri', 12))
         num_points_entry.pack(padx=5, pady=5)
-        confirm_button = tk.Button(window, text="Confirm", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
+        confirm_button = tk.Button(window, text="Confirmar", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
         confirm_button.pack(padx=5, pady=5)
 
     def open_polynomial_fit_window(self):
@@ -275,6 +272,21 @@ class NumericalMethodsCalculator(tk.Tk):
                 result_label = tk.Label(window, font=('Calibri', 12), bg='LightBlue', fg='Red')
                 result_label.pack(padx=5, pady=5)
 
+                def format_polynomial(coefficients):
+                    terms = []
+                    degree = len(coefficients) - 1
+                    for i, coef in enumerate(coefficients):
+                        coef = round(coef, 3)  # Arredonda o coeficiente para 3 casas decimais
+                        if degree - i == 0:
+                            terms.append(f'{coef}')
+                        elif degree - i == 1:
+                            terms.append(f'{coef}x')
+                        else:
+                            terms.append(f'{coef}x^{degree - i}')
+                    return ' + '.join(terms)
+
+
+                # E então na sua função calculate_polynomial_fit, você pode usar essa função para formatar a saída:
                 def calculate_polynomial_fit():
                     try:
                         points = self.get_points(points_entries)
@@ -285,27 +297,28 @@ class NumericalMethodsCalculator(tk.Tk):
                         y = np.array([p[1] for p in points])
 
                         coefficients = np.polyfit(x, y, degree)
-                        polynomial = np.poly1d(coefficients)
+                        polynomial = format_polynomial(coefficients)
 
                         result_label.config(text=f'Polynomial: {polynomial}')
 
                     except Exception as e:
-                        messagebox.showerror("Error", str(e))
+                        messagebox.showerror("Erro", str(e))
 
-                tk.Button(window, text="Calculate", command=calculate_polynomial_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
+
+                tk.Button(window, text="Calcular", command=calculate_polynomial_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
 
             except ValueError:
-                messagebox.showerror("Error", "Invalid input. Please enter valid numbers.")
+                messagebox.showerror("Erro", "Input Invalido, por favor entre com numero validos.")
 
-        num_points_label = tk.Label(window, text="Enter number of points:", font=('Calibri', 12))
+        num_points_label = tk.Label(window, text="Entre com o número de pontos:", font=('Calibri', 12))
         num_points_label.pack(padx=5, pady=5)
         num_points_entry = tk.Entry(window, font=('Calibri', 12))
         num_points_entry.pack(padx=5, pady=5)
-        degree_label = tk.Label(window, text="Enter degree of polynomial:", font=('Calibri', 12))
+        degree_label = tk.Label(window, text="Entre com o grau desejado do polinômio:", font=('Calibri', 12))
         degree_label.pack(padx=5, pady=5)
         degree_entry = tk.Entry(window, font=('Calibri', 12))
         degree_entry.pack(padx=5, pady=5)
-        confirm_button = tk.Button(window, text="Confirm", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
+        confirm_button = tk.Button(window, text="Confirmar", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
         confirm_button.pack(padx=5, pady=5)
 
     def open_exponential_fit_window(self):
@@ -345,18 +358,18 @@ class NumericalMethodsCalculator(tk.Tk):
                         result_label.config(text=f'y = {a:.4f} * {b:.4f}^x')
 
                     except Exception as e:
-                        messagebox.showerror("Error", str(e))
+                        messagebox.showerror("Erro", str(e))
 
-                tk.Button(window, text="Calculate", command=calculate_exponential_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
+                tk.Button(window, text="Calcular", command=calculate_exponential_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
 
             except ValueError:
-                messagebox.showerror("Error", "Invalid number of points. Please enter a number between 1 and 100.")
+                messagebox.showerror("Erro", "Numero invalido de pontos. Por favor entre com número de 1 a 100.")
 
-        num_points_label = tk.Label(window, text="Enter number of points:", font=('Calibri', 12))
+        num_points_label = tk.Label(window, text="Entre com o número de pontos:", font=('Calibri', 12))
         num_points_label.pack(padx=5, pady=5)
         num_points_entry = tk.Entry(window, font=('Calibri', 12))
         num_points_entry.pack(padx=5, pady=5)
-        confirm_button = tk.Button(window, text="Confirm", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
+        confirm_button = tk.Button(window, text="Confirmar", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
         confirm_button.pack(padx=5, pady=5)
 
 if __name__ == "__main__":
