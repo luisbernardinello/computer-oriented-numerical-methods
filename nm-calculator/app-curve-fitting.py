@@ -16,8 +16,8 @@ class NumericalMethodsCalculator(tk.Tk):
         self.menu_frame.pack(expand=True)
 
         options = [
-            "Calcular polinomio interpolador de Newton",
-            "Calcular polinomio interpolador de Newton-Gregory",
+            "Calcular polinomio interpolador por Newton",
+            "Calcular polinomio interpolador por Newton-Gregory",
             "Ajustar os pontos tabelados em uma reta da forma y=a0+a1x",
             "Ajustar os pontos tabelados em um polinomio de grau desejado",
             "Ajustar os pontos tabelados em uma curva exponencial da forma y=ab^x"
@@ -36,8 +36,32 @@ class NumericalMethodsCalculator(tk.Tk):
             button.pack(pady=10)
 
     def create_points_entries(self, window, num_points):
-        entries_frame = tk.Frame(window)
-        entries_frame.pack()
+        frame = tk.Frame(window)
+        frame.pack(fill='both', expand=True)
+
+        if num_points >= 8:
+            canvas = tk.Canvas(frame)
+            scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+            scrollable_frame = tk.Frame(canvas)
+
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(
+                    scrollregion=canvas.bbox("all")
+                )
+            )
+
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+
+            scrollable_frame.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+
+            entries_frame = scrollable_frame
+        else:
+            entries_frame = frame
 
         entries = []
         for i in range(num_points):
@@ -66,10 +90,16 @@ class NumericalMethodsCalculator(tk.Tk):
             messagebox.showerror("Erro", "Input Invalido. Por favor, entre com numeros validos.")
             return None
 
+    def calculate_r_squared(self, y_true, y_pred):
+        ss_res = np.sum((y_true - y_pred) ** 2)
+        ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot)
+        return r_squared
+
     def open_newton_window(self):
         window = tk.Toplevel(self)
         window.geometry('600x400')
-        window.title('Polinomio Interpolador de Newton')
+        window.title('Polinomio Interpolador por Newton')
 
         def show_points_entries():
             try:
@@ -114,7 +144,7 @@ class NumericalMethodsCalculator(tk.Tk):
 
                         Y = divided_diff_table(points, num_points)
                         result = newton_interpolation(Y, x, points, num_points)
-                        result_label.config(text=f'P({x}) = {result:.4f}')
+                        result_label.config(text=f'f({x}) = {result:.4f}')
 
                     except Exception as e:
                         messagebox.showerror("Erro", str(e))
@@ -134,7 +164,7 @@ class NumericalMethodsCalculator(tk.Tk):
     def open_newton_gregory_window(self):
         window = tk.Toplevel(self)
         window.geometry('600x400')
-        window.title('Polinomio Interpolador de Newton-Gregory')
+        window.title('Polinomio Interpolador por Newton-Gregory')
 
         def show_points_entries():
             try:
@@ -178,14 +208,14 @@ class NumericalMethodsCalculator(tk.Tk):
                                 result += (product_term * Y[0][i]) / math.factorial(i)
                             return result
 
-                        h = points[1][0] - points[0][0]
+                        h = round(points[1][0] - points[0][0], 5)
                         for i in range(1, num_points):
-                            if points[i][0] - points[i - 1][0] != h:
+                            if round(points[i][0] - points[i - 1][0], 5) != h:
                                 raise ValueError("Pontos não estão igualmente espaçados para a Interpolação de Newton-Gregory.")
 
                         Y = gregory_diff_table(points, num_points)
                         result = newton_gregory_interpolation(Y, x, points, num_points, h)
-                        result_label.config(text=f'P({x}) = {result:.4f}')
+                        result_label.config(text=f'f({x}) = {result:.4f}')
 
                     except Exception as e:
                         messagebox.showerror("Erro", str(e))
@@ -220,6 +250,8 @@ class NumericalMethodsCalculator(tk.Tk):
 
                 result_label = tk.Label(window, font=('Calibri', 12), bg='LightBlue', fg='Red')
                 result_label.pack(padx=5, pady=5)
+                r_squared_label = tk.Label(window, font=('Calibri', 12), bg='LightBlue', fg='Red')
+                r_squared_label.pack(padx=5, pady=5)
 
                 def calculate_linear_fit():
                     try:
@@ -233,7 +265,11 @@ class NumericalMethodsCalculator(tk.Tk):
                         A = np.vstack([x, np.ones(len(x))]).T
                         m, c = np.linalg.lstsq(A, y, rcond=None)[0]
 
+                        y_pred = m * x + c
+                        r_squared = self.calculate_r_squared(y, y_pred)
+
                         result_label.config(text=f'y = {c:.4f} + {m:.4f}x')
+                        r_squared_label.config(text=f'R² = {r_squared:.4f}')
 
                     except Exception as e:
                         messagebox.showerror("Erro", str(e))
@@ -271,12 +307,14 @@ class NumericalMethodsCalculator(tk.Tk):
 
                 result_label = tk.Label(window, font=('Calibri', 12), bg='LightBlue', fg='Red')
                 result_label.pack(padx=5, pady=5)
+                r_squared_label = tk.Label(window, font=('Calibri', 12), bg='LightBlue', fg='Red')
+                r_squared_label.pack(padx=5, pady=5)
 
                 def format_polynomial(coefficients):
                     terms = []
                     degree = len(coefficients) - 1
                     for i, coef in enumerate(coefficients):
-                        coef = round(coef, 3)  # Arredonda o coeficiente para 3 casas decimais
+                        coef = round(coef, 3)
                         if degree - i == 0:
                             terms.append(f'{coef}')
                         elif degree - i == 1:
@@ -285,8 +323,6 @@ class NumericalMethodsCalculator(tk.Tk):
                             terms.append(f'{coef}x^{degree - i}')
                     return ' + '.join(terms)
 
-
-                # E então na sua função calculate_polynomial_fit, você pode usar essa função para formatar a saída:
                 def calculate_polynomial_fit():
                     try:
                         points = self.get_points(points_entries)
@@ -298,17 +334,19 @@ class NumericalMethodsCalculator(tk.Tk):
 
                         coefficients = np.polyfit(x, y, degree)
                         polynomial = format_polynomial(coefficients)
+                        y_pred = np.polyval(coefficients, x)
+                        r_squared = self.calculate_r_squared(y, y_pred)
 
-                        result_label.config(text=f'Polynomial: {polynomial}')
+                        result_label.config(text=f'polinomio: {polynomial}')
+                        r_squared_label.config(text=f'R² = {r_squared:.4f}')
 
                     except Exception as e:
                         messagebox.showerror("Erro", str(e))
 
-
                 tk.Button(window, text="Calcular", command=calculate_polynomial_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(padx=5, pady=5)
 
             except ValueError:
-                messagebox.showerror("Erro", "Input Invalido, por favor entre com numero validos.")
+                messagebox.showerror("Erro", "Input Invalido, por favor entre com numeros validos.")
 
         num_points_label = tk.Label(window, text="Entre com o número de pontos:", font=('Calibri', 12))
         num_points_label.pack(padx=5, pady=5)
@@ -339,6 +377,8 @@ class NumericalMethodsCalculator(tk.Tk):
 
                 result_label = tk.Label(window, font=('Calibri', 12), bg='LightBlue', fg='Red')
                 result_label.pack(padx=5, pady=5)
+                r_squared_label = tk.Label(window, font=('Calibri', 12), bg='LightBlue', fg='Red')
+                r_squared_label.pack(padx=5, pady=5)
 
                 def calculate_exponential_fit():
                     try:
@@ -355,7 +395,11 @@ class NumericalMethodsCalculator(tk.Tk):
                         a = math.exp(c)
                         b = math.exp(m)
 
+                        y_pred = a * np.power(b, x)
+                        r_squared = self.calculate_r_squared(y, y_pred)
+
                         result_label.config(text=f'y = {a:.4f} * {b:.4f}^x')
+                        r_squared_label.config(text=f'R² = {r_squared:.4f}')
 
                     except Exception as e:
                         messagebox.showerror("Erro", str(e))
