@@ -283,31 +283,17 @@ class NumericalMethodsCalculator(tk.Tk):
                         x = np.array([p[0] for p in points])
                         y = np.array([p[1] for p in points])
 
-                        n = len(x)
-                        sum_x = np.sum(x)
-                        sum_y = np.sum(y)
-                        sum_x_squared = np.sum(x**2)
-                        sum_xy = np.sum(x * y)
+                        A = np.vstack([x, np.ones(len(x))]).T
+                        m, c = np.linalg.lstsq(A, y, rcond=None)[0]
 
-                        # minimos quadrados
-                        a1 = (n * sum_xy - sum_x * sum_y) / (n * sum_x_squared - sum_x**2)
-                        a0 = (sum_y - a1 * sum_x) / n
+                        y_pred = m * x + c
+                        r_squared = self.calculate_r_squared(y, y_pred)
 
-                        
-                        y_pred = a0 + a1 * x
-
-       
-                        mean_y = np.mean(y)
-                        ss_total = np.sum((y - mean_y)**2)
-                        ss_residual = np.sum((y - y_pred)**2)
-                        r_squared = 1 - (ss_residual / ss_total)
-
-                        result_label.config(text=f'y = {a0:.4f} + {a1:.4f}x')
+                        result_label.config(text=f'y = {c:.4f} + {m:.4f}x')
                         r_squared_label.config(text=f'R² = {r_squared:.4f}')
 
                     except Exception as e:
                         messagebox.showerror("Erro", str(e))
-
 
                 tk.Button(input_frame, text="Calcular", command=calculate_linear_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(side='left', padx=5, pady=5)
 
@@ -361,43 +347,7 @@ class NumericalMethodsCalculator(tk.Tk):
                             terms.append(f'{coef}x^{degree - i}')
                     return ' + '.join(terms)
 
-                def cholesky_decomposition(A):
-                    n = len(A)
-                    L = np.zeros((n, n))
-                    for i in range(n):
-                        for j in range(i + 1):
-                            sum = 0
-                            if j == i:
-                                for k in range(j):
-                                    sum += L[j, k] ** 2
-                                L[j, j] = np.sqrt(A[j, j] - sum)
-                            else:
-                                for k in range(j):
-                                    sum += L[i, k] * L[j, k]
-                                L[i, j] = (A[i, j] - sum) / L[j, j]
-                    return L
-
-                
-                def lu_decomposition(A):
-                    n = len(A)
-                    L = np.zeros((n, n))
-                    U = np.zeros((n, n))
-                    
-                    for i in range(n):
-                        for j in range(i, n):
-                            sum_u = sum(L[i][k] * U[k][j] for k in range(i))
-                            U[i][j] = A[i][j] - sum_u
-
-                        for j in range(i, n):
-                            if i == j:
-                                L[i][i] = 1
-                            else:
-                                sum_l = sum(L[j][k] * U[k][i] for k in range(i))
-                                L[j][i] = (A[j][i] - sum_l) / U[i][i]
-
-                    return L, U
-                
-                def calculate_polynomial_fit(method):
+                def calculate_polynomial_fit():
                     try:
                         points = self.get_points(points_entries)
                         if points is None:
@@ -405,47 +355,19 @@ class NumericalMethodsCalculator(tk.Tk):
 
                         x = np.array([p[0] for p in points])
                         y = np.array([p[1] for p in points])
-                        n = degree + 1
 
-                        # matriz de Vandermonde
-                        A = np.zeros((len(x), n))
-                        for i in range(len(x)):
-                            for j in range(n):
-                                A[i, j] = x[i] ** (n - j - 1)
-                        B = y
-
-                        if method == "LU":
-                            A_T_A = np.dot(A.T, A)
-                            A_T_B = np.dot(A.T, B)
-                            L, U = lu_decomposition(A_T_A)
-                            y_lu = np.linalg.solve(L, A_T_B)
-                            coefficients = np.linalg.solve(U, y_lu)
-                        elif method == "Cholesky":
-                            A_T_A = np.dot(A.T, A)
-                            A_T_B = np.dot(A.T, B)
-                            L = cholesky_decomposition(A_T_A)
-                            y_cholesky = np.linalg.solve(L, A_T_B)
-                            coefficients = np.linalg.solve(L.T, y_cholesky)
-                        else:
-                            raise ValueError("Método de decomposição não selecionado.")
-
+                        coefficients = np.polyfit(x, y, degree)
                         polynomial = format_polynomial(coefficients)
                         y_pred = np.polyval(coefficients, x)
                         r_squared = self.calculate_r_squared(y, y_pred)
 
                         result_label.config(text=f'polinomio: {polynomial}')
                         r_squared_label.config(text=f'R² = {r_squared:.4f}')
-                        
-                        
 
                     except Exception as e:
                         messagebox.showerror("Erro", str(e))
 
-                
-                lu_button = tk.Button(window, text="LU", command=lambda: calculate_polynomial_fit("LU"), font=('Calibri', 12), bg='LightBlue', fg='Red')
-                lu_button.pack(padx=5, pady=5)
-                cholesky_button = tk.Button(window, text="Cholesky", command=lambda: calculate_polynomial_fit("Cholesky"), font=('Calibri', 12), bg='LightBlue', fg='Red')
-                cholesky_button.pack(padx=5, pady=5)
+                tk.Button(input_frame, text="Calcular", command=calculate_polynomial_fit, font=('Calibri', 12), bg='LightBlue', fg='Red').pack(side='left', padx=5, pady=5)
 
             except ValueError:
                 messagebox.showerror("Erro", "Input Invalido, por favor entre com numeros validos.")
@@ -496,24 +418,12 @@ class NumericalMethodsCalculator(tk.Tk):
 
                         log_y = np.log(y)
                         A = np.vstack([x, np.ones(len(x))]).T
-
-                        # coeficientes m e c
-                        ATA_inv = np.linalg.inv(A.T @ A)
-                        ATA_inv_AT = ATA_inv @ A.T
-                        mc = ATA_inv_AT @ log_y
-
-
-                        m, c = mc[0], mc[1]
-
-                        a = np.exp(c)
-                        b = np.exp(m)
+                        m, c = np.linalg.lstsq(A, log_y, rcond=None)[0]
+                        a = math.exp(c)
+                        b = math.exp(m)
 
                         y_pred = a * np.power(b, x)
-
-                        mean_y = np.mean(y)
-                        ss_total = np.sum((y - mean_y)**2)
-                        ss_residual = np.sum((y - y_pred)**2)
-                        r_squared = 1 - (ss_residual / ss_total)
+                        r_squared = self.calculate_r_squared(y, y_pred)
 
                         result_label.config(text=f'y = {a:.4f} * {b:.4f}^x')
                         r_squared_label.config(text=f'R² = {r_squared:.4f}')
@@ -532,7 +442,7 @@ class NumericalMethodsCalculator(tk.Tk):
         num_points_entry.pack(padx=5, pady=5)
         confirm_button = tk.Button(window, text="Confirmar", command=show_points_entries, font=('Calibri', 12), bg='LightBlue', fg='Red')
         confirm_button.pack(padx=5, pady=5)
-        
+
 if __name__ == "__main__":
     app = NumericalMethodsCalculator()
     app.mainloop()
