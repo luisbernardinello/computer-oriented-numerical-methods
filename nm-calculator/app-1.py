@@ -1,494 +1,47 @@
 import numpy as np
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
+from abc import ABC, abstractmethod
 
+# ---------------------- Strategy Pattern ----------------------
+class LinearSystemMethod(ABC):
+    @abstractmethod
+    def calculate(self, matrix, vector, **kwargs):
+        pass
 
-# caso não esteja funcionando o módulo tkinter verificar se a opção Install Tcl/Tk and IDLE foi marcada durante a instalação do Python 3
+    @abstractmethod
+    def get_result_text(self):
+        pass
 
-class Application:
-    def __init__(self, master):
-        self.master = master
-        self.master.title("Calculadora MNC")
-        self.master.resizable(False, False) 
-        
-        ##### centralizar janela  
-        window_width = 400  
-        window_height = 550 
-
-        screen_width = master.winfo_screenwidth()
-        screen_height = master.winfo_screenheight()
-
-        x = (screen_width - window_width) // 2
-        y = (screen_height - window_height) // 2
-
-        self.master.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-        ##### options
-        self.options = [
-            "Entrar com matriz",
-            "Entrar com vetor de termos independentes",
-            "Calcular o determinante",
-            "Calcular o sistema triangular inferior",
-            "Calcular o sistema triangular superior",
-            "Calcular pelo método de Decomposicao LU",
-            "Calcular pelo método de Cholesky",
-            "Calcular pelo método de Gauss Compacto",
-            "Calcular pelo método de Gauss Jordan",
-            "Calcular pelo método de Jacobi",
-            "Calcular pelo método de Gauss-Seidel",
-            "Calcular matriz inversa",
-            "Sair"
-        ]
-        
-        self.selection = tk.StringVar(value=self.options[0])
-        self.create_widgets()
-
-    def create_widgets(self):
-        self.frame = tk.Frame(self.master, bg="gray89")
-        self.frame.pack(fill=tk.BOTH, expand=True)
-
-        self.menu_label = tk.Label(self.frame, text="Por favor, escolha uma das opções abaixo:", bg="LightBlue", font=("Trebuchet MS", 9, "bold"))
-        self.menu_label.pack()
-
-        
-        option_groups = {
-            "Entrada de Dados": [
-                "Entrar com matriz",
-                "Entrar com vetor de termos independentes"
-            ],
-            "Determinante": [
-                "Calcular o determinante",
-            ],
-            "Sistemas Triangulares": [
-                "Calcular o sistema triangular inferior",
-                "Calcular o sistema triangular superior"
-            ],
-            "Métodos Diretos": [
-                "Calcular pelo método de Decomposicao LU",
-                "Calcular pelo método de Cholesky",
-                "Calcular pelo método de Gauss Compacto",
-                "Calcular pelo método de Gauss Jordan"
-            ],
-            "Métodos Iterativos": [
-                "Calcular pelo método de Jacobi",
-                "Calcular pelo método de Gauss-Seidel"
-            ],
-            "Matriz Inversa": [
-                "Calcular matriz inversa"
-            ]
-            
-        }
-
-        # rotulos e radiobuttons para cada label
-        for group_label, options in option_groups.items():
-            group_label_widget = tk.Label(self.frame, text=group_label, bg="LightBlue", font=("Trebuchet MS", 9, "bold"))
-            group_label_widget.pack(anchor=tk.W)
-
-            for option in options:
-                tk.Radiobutton(
-                    self.frame,
-                    text=option,
-                    variable=self.selection,
-                    value=option,
-                    bg="gray89"
-                ).pack(anchor=tk.W, padx=20, pady=2)
-
-        self.confirm_button = tk.Button(self.frame, text="Confirmar", command=self.handle_selection)
-        self.confirm_button.pack()
-
-
-    def handle_selection(self):
-        selected_option = self.selection.get()
-        
-        if selected_option == "Sair":
-            self.master.destroy()
-
-        elif selected_option == "Entrar com matriz":
-            self.enter_matrix()
-
-        elif selected_option == "Entrar com vetor de termos independentes":
-            self.enter_vector()   
-
-        elif selected_option == "Calcular o determinante":
-            if not hasattr(self, 'M'):
-                messagebox.showerror("Erro", "Nenhuma matriz foi inserida.")
-            else:
-                determinant = self.calc_determinant(self.M)
-                messagebox.showinfo("Resultado", f"O determinante é: {round(determinant, 4)}")
-
-        elif selected_option == "Calcular o sistema triangular inferior":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                X = self.calc_lower_triangular(len(self.M), self.M, self.V)
-                X = [round(x, 4) for x in X]
-                messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-
-        elif selected_option == "Calcular o sistema triangular superior":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                X = self.calc_upper_triangular(len(self.M), self.M, self.V)
-                X = [round(x, 4) for x in X]
-                messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-
-        elif selected_option == "Calcular pelo método de Decomposicao LU":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                determinant = self.calc_determinant(self.M)
-                if determinant == 0:
-                    messagebox.showerror("Erro", "A matriz inserida não converge. O determinante é igual a zero.")
-                else:
-                    triangular_matrix_L, triangular_matrix_U, vector = self.calc_LU_decomposition(len(self.M), self.M, self.V)
-                    X = self.aux_LU(len(self.M), triangular_matrix_L, triangular_matrix_U, vector)
-                    X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
-                    messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-
-        elif selected_option == "Calcular pelo método de Cholesky":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                determinant = self.calc_determinant(self.M)
-                calc_simetric = self.calc_simetric(self.M)
-                if determinant < 0:
-                    messagebox.showerror("Erro", "A matriz inserida não é definida positiva.")
-                elif calc_simetric == False:
-                    messagebox.showerror("Erro", "A matriz inserida não é simétrica.")
-                else:
-                    X = self.calc_cholesky(len(self.M), self.M, self.V)
-                    X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
-                    messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-
-        elif selected_option == "Calcular pelo método de Gauss Compacto":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                X = self.calc_compact_gauss(len(self.M), self.M, self.V)
-                X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
-                messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-
-        elif selected_option == "Calcular pelo método de Gauss Jordan":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                X = self.calc_gauss_jordan(len(self.M), self.M, self.V)
-                if X is None:
-                    messagebox.showerror("Erro", "O sistema gerado é indeterminado.")
-                else:
-                    X = [0 if abs(x) < 1e-10 else round(x, 4) for x in X]
-                    messagebox.showinfo("Resultado", f"Os valores de X são: {', '.join(map(str, X))}")
-
-        elif selected_option == "Calcular pelo método de Jacobi":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                vector = self.V.tolist()
-                aprox = [0] * len(self.M)
-                X = [0] * len(self.M)
-                max_iter = 1000  
-                e = 0.0001  # precisao
-                iterations = [0]
-                if not self.column_convergence(self.M) or not self.line_convergence(self.M):
-                    messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Colunas não satisfeito.")
-                else:
-                    self.calc_jacobi(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
-                    X = [round(x, 4) for x in X]
-                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
-                    messagebox.showinfo("Resultado", result_str)
-
-        elif selected_option == "Calcular pelo método de Gauss-Seidel":
-            if not hasattr(self, 'M') or not hasattr(self, 'V'):
-                messagebox.showerror("Erro", "Matriz ou vetor V não foram inseridos.")
-            else:
-                vector = self.V.tolist()
-                aprox = [0] * len(self.M)
-                X = [0] * len(self.M)
-                max_iter = 1000  # iteracoes
-                e = 0.0001  # precisao
-                iterations = [0]
-                if not self.line_convergence(self.M) or not self.sassenfeld_convergence_criterion(self.M):
-                    messagebox.showerror("Erro", "Matriz não converge. Criterio de Linhas ou Sassenfeld não satisfeito.")
-                else:
-                    self.calc_gauss_seidel(len(self.M), self.M.tolist(), vector, aprox, e, max_iter, X, iterations)
-                    X = [round(x, 4) for x in X]
-                    result_str = f"Os valores de X são: {', '.join(map(str, X))}\nNúmero de iterações: {iterations[0]}"
-                    messagebox.showinfo("Resultado", result_str)
-
-        elif selected_option == "Calcular matriz inversa":
-            if not hasattr(self, "M"):
-                messagebox.showerror("Erro", "Matriz não foi inserida")
-            else:
-                self.inverse_matrix_calculator()
-
-
-
-################################################################ INSERE MATRIZ E VETOR DE TERMOS INDEPENDENTES
-
-    def enter_matrix(self):
-        self.matrix_window = tk.Toplevel(self.master)
-        self.matrix_window.title("Entrar com matriz")
-        self.matrix_window.resizable(False, False)
-
-        
-
-        self.matrix_frame = tk.Frame(self.matrix_window, bg="gray89")
-        self.matrix_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.order_label = tk.Label(self.matrix_frame, text="Ordem da matriz:", bg="gray89")
-        self.order_label.grid(row=0, column=0, padx=5, pady=5)
-
-        self.order_entry = tk.Entry(self.matrix_frame, width=5)
-        self.order_entry.grid(row=0, column=1, padx=5, pady=5)
-
-        self.confirm_order_button = tk.Button(self.matrix_frame, text="Confirmar", command=self.create_matrix_entries)
-        self.confirm_order_button.grid(row=0, column=2, padx=5, pady=5)
-
-    def create_matrix_entries(self):
-        order = self.order_entry.get()
-        try:
-            order = int(order)
-        except ValueError:
-            messagebox.showerror("Erro", "Insira um numero inteiro válido.")
-            return
-        self.order = order #armazena ordem
-
-        self.matrix_entries = []
-        for i in range(order):
-            row_entries = []
-            for j in range(order):
-                entry = tk.Entry(self.matrix_frame, width=8)
-                entry.grid(row=i+1, column=j, padx=5, pady=5)
-                row_entries.append(entry)
-            self.matrix_entries.append(row_entries)
-
-        self.confirm_matrix_button = tk.Button(self.matrix_frame, text="Confirmar", command=self.confirm_matrix)
-        self.confirm_matrix_button.grid(row=order+1, column=0, columnspan=order, padx=5, pady=5)
-
-    def confirm_matrix(self):
-        order = len(self.matrix_entries)
-        M = np.zeros((order, order))
-        for i in range(order):
-            for j in range(order):
-                entry_value = self.matrix_entries[i][j].get()
-                try:
-                    M[i][j] = float(entry_value)
-                except ValueError:
-                    messagebox.showerror("Erro", "Insira somente numeros válidos.")
-                    return
-        self.M = M
-        self.matrix_window.destroy()
-        messagebox.showinfo("Sucesso", "Matriz inserida com sucesso.")
-
-    def enter_vector(self):
-        if not hasattr(self, 'order'):
-            messagebox.showerror("Erro", "Entre com o valor da matriz antes do vetor.")
-            return
-
-        self.vector_window = tk.Toplevel(self.master)
-        self.vector_window.title("Entrar com o vetor de termos independentes")
-        self.vector_window.resizable(False, False)
-
-        self.vector_frame = tk.Frame(self.vector_window, bg="gray89")
-        self.vector_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.order_label = tk.Label(self.vector_frame, text=f"Tamanho do vetor (ordem da matriz: {self.order}):", bg="gray89")
-        self.order_label.grid(row=0, column=0, padx=5, pady=5)
-
-        self.vector_entries = []
-        for i in range(self.order):
-            entry = tk.Entry(self.vector_frame, width=8)
-            entry.grid(row=i + 1, column=0, padx=5, pady=5)
-            self.vector_entries.append(entry)
-
-        self.confirm_vector_button = tk.Button(self.vector_frame, text="Confirmar", command=self.confirm_vector)
-        self.confirm_vector_button.grid(row=self.order + 1, column=0, padx=5, pady=5)
-
-    def confirm_vector(self):
-        V = []
-        for entry in self.vector_entries:
-            value = entry.get()
-            try:
-                V.append(float(value))
-            except ValueError:
-                messagebox.showerror("Erro", "Insira apenas números válidos para o vetor.")
-                return
-
-        self.V = np.array(V)
-        self.vector_window.destroy()
-        messagebox.showinfo("Sucesso", "Vetor inserido com sucesso.")
-
-
-
-
-############################################################################  DETERMINANTE
+class DeterminantMethod(LinearSystemMethod):
+    def calculate(self, matrix, vector, **kwargs):
+        determinant = self.calc_determinant(matrix)
+        self.result = determinant
+        return determinant
 
     def calc_determinant(self, matrix):
-            order = len(matrix)
-            if order == 1:
-                return matrix[0][0]
-            else:
-                resp = 0
-                for i in range(order):
-                    if matrix[0][i] != 0:
-                        matrix_aux = np.delete(matrix, 0, axis=0)
-                        matrix_aux = np.delete(matrix_aux, i, axis=1)
-                        pivo = matrix[0][i] if i % 2 == 0 else -matrix[0][i]
-                        resp += pivo * self.calc_determinant(matrix_aux)
-                return resp
-
-############################################################################ MATRIZ INVERSA
-
-    ##### metodos auxiliares para exibir e calcular matriz inversa
-    def inverse_matrix_calculator(self):
-        inverse_matrix_window = tk.Toplevel()
-        inverse_matrix_window.title("Matriz Inversa")
-        inverse_matrix_window.resizable(False, False)
-
-        
-
-        inverse_matrix_options = [
-            "Calcular Matriz Inversa por Gauss Compacto",
-            "Calcular por Decomposição LU",
-        ]
-
-        inverse_matrix_selection = tk.StringVar(value=inverse_matrix_options[0])
-
-        for option in inverse_matrix_options:
-            tk.Radiobutton(
-                inverse_matrix_window,
-                text=option,
-                variable=inverse_matrix_selection,
-                value=option,
-                bg="gray89"
-            ).pack(anchor=tk.W)
-
-        confirm_button_inverse_matrix = tk.Button(inverse_matrix_window, text="Confirmar", command=lambda: self.confirm_inverse_matrix(inverse_matrix_selection))
-        confirm_button_inverse_matrix.pack()
-
-    def confirm_inverse_matrix(self, inverse_matrix_selection):
-        selected_inverse_matrix_option = inverse_matrix_selection.get()
-        if selected_inverse_matrix_option == "Calcular Matriz Inversa por Gauss Compacto":
-            order = len(self.M)
-            inversa = self.inverse_matrix_gauss(order, self.M)
-            if inversa is not None:
-                self.show_inverse_matrix(inversa)
-        elif selected_inverse_matrix_option == "Calcular por Decomposição LU":
-            order = len(self.M)
-            inversa = self.inverse_matrix_lu(order, self.M)
-            if inversa is not None:
-                self.show_inverse_matrix(inversa)
-
-
-    def show_inverse_matrix(self, inversa):
-        result_window = tk.Toplevel(self.master)
-        result_window.title("Resultado da Matriz Inversa")
-        result_window.resizable(False, False)
-
-        # Label para o resultado
-        result_label = tk.Label(result_window, text="Matriz Inversa:")
-        result_label.grid(row=0, column=0, columnspan=len(inversa[0]))
-
-        # Elementos da matriz como labels
-        for i, row in enumerate(inversa):
-            for j, cell in enumerate(row):
-                cell_label = tk.Label(result_window, text=f"{round(cell, 4)}", relief=tk.RIDGE, width=10, height=2)
-                cell_label.grid(row=i+1, column=j, padx=5, pady=5)
-
-        close_button = tk.Button(result_window, text="Fechar", command=result_window.destroy)
-        close_button.grid(row=len(inversa)+1, column=0, columnspan=len(inversa[0]), pady=10)
-
-
-
-
-    ##### matriz inversa por decomposição LU
-    def aux_inverse_matrix_lu(self, order, matrix, triangular_matrix_L, triangular_matrix_U):
-        for i in range(order):
-            for j in range(order):
-                triangular_matrix_U[i][j] = matrix[i][j]
-
-        for k in range(order):
-            triangular_matrix_L[k][k] = 1.0
-
-            for i in range(k + 1, order):
-                triangular_matrix_L[i][k] = triangular_matrix_U[i][k] / triangular_matrix_U[k][k]
-                for j in range(k, order):
-                    triangular_matrix_U[i][j] -= triangular_matrix_L[i][k] * triangular_matrix_U[k][j]
-
-
-
-    def inverse_matrix_lu(self, order, matrix):
-        triangular_matrix_L = [[0] * order for _ in range(order)]
-        triangular_matrix_U = [[0] * order for _ in range(order)]
-        ident = [[1 if i == j else 0 for j in range(order)] for i in range(order)]
-
-        self.aux_inverse_matrix_lu(order, matrix, triangular_matrix_L, triangular_matrix_U)
-
-        y = [[0] * order for _ in range(order)]
-
-        # Ly = i
-        for k in range(order):
+        order = len(matrix)
+        if order == 1:
+            return matrix[0][0]
+        else:
+            resp = 0
             for i in range(order):
-                soma = sum(triangular_matrix_L[i][j] * y[j][k] for j in range(i))
-                y[i][k] = (ident[i][k] - soma) / triangular_matrix_L[i][i]
+                if matrix[0][i] != 0:
+                    matrix_aux = np.delete(matrix, 0, axis=0)
+                    matrix_aux = np.delete(matrix_aux, i, axis=1)
+                    pivo = matrix[0][i] if i % 2 == 0 else -matrix[0][i]
+                    resp += pivo * self.calc_determinant(matrix_aux)
+            return resp
 
-        inversa = [[0] * order for _ in range(order)]
+    def get_result_text(self):
+        return f"Determinante: {self.result:.4f}"
 
-        # Ux = y
-        for k in range(order):
-            for i in range(order - 1, -1, -1):
-                soma = sum(triangular_matrix_U[i][j] * inversa[j][k] for j in range(i + 1, order))
-                inversa[i][k] = (y[i][k] - soma) / triangular_matrix_U[i][i]
+class LowerTriangularMethod(LinearSystemMethod):
+    def calculate(self, matrix, vector, **kwargs):
+        X = self.calc_lower_triangular(len(matrix), matrix, vector)
+        self.result = X
+        return X
 
-        return inversa
-
-
-    ##### calcular matriz inversa por Gauss Compacto
-
-    def inverse_matrix_gauss(self, order, matrix):
-        augmented_matrix = [[0] * (2 * order) for _ in range(order)]
-
-        for i in range(order):
-            for j in range(order):
-                augmented_matrix[i][j] = matrix[i][j]
-                augmented_matrix[i][j + order] = 1.0 if i == j else 0.0
-
-        # Gauss compacto
-        for i in range(order):
-            pivot = augmented_matrix[i][i]
-
-            if pivot == 0:
-                swap = False
-
-                for j in range(i + 1, order):
-                    if augmented_matrix[j][i] != 0:
-                        swap = True
-                        augmented_matrix[i], augmented_matrix[j] = augmented_matrix[j], augmented_matrix[i]
-                        break
-
-                if not swap:
-                    messagebox.showerror("Erro", "A matriz não é invertível")
-                    return None
-
-                pivot = augmented_matrix[i][i]
-
-            for j in range(2 * order):
-                augmented_matrix[i][j] /= pivot
-
-            for k in range(order):
-                if k != i:
-                    factor = augmented_matrix[k][i]
-                    for j in range(2 * order):
-                        augmented_matrix[k][j] -= factor * augmented_matrix[i][j]
-
-        inversa = [[augmented_matrix[i][j + order] for j in range(order)] for i in range(order)]
-        return inversa
-
-    
-
-        
-
-################################################################ SISTEMAS TRIANGULARES       
     def calc_lower_triangular(self, order, matrix, vector):
         X = np.zeros(order)
         for i in range(order):
@@ -499,6 +52,15 @@ class Application:
                 for j in range(i):
                     soma += matrix[i][j] * X[j]
                 X[i] = (vector[i] - soma) / matrix[i][i]
+        return X
+
+    def get_result_text(self):
+        return f"Solução (Triangular Inferior): {', '.join(f'{x:.4f}' for x in self.result)}"
+
+class UpperTriangularMethod(LinearSystemMethod):
+    def calculate(self, matrix, vector, **kwargs):
+        X = self.calc_upper_triangular(len(matrix), matrix, vector)
+        self.result = X
         return X
 
     def calc_upper_triangular(self, order, matrix, vector):
@@ -512,11 +74,34 @@ class Application:
                     soma += matrix[i][j] * X[j]
                 X[i] = (vector[i] - soma) / matrix[i][i]
         return X
-    
-  ################################################################ METODOS DIRETOS
-  
-  
-   ###### decomposiçãoLU
+
+    def get_result_text(self):
+        return f"Solução (Triangular Superior): {', '.join(f'{x:.4f}' for x in self.result)}"
+
+class LUDecompositionMethod(LinearSystemMethod):
+    def __init__(self):
+        self.determinant_method = DeterminantMethod()
+
+    def calculate(self, matrix, vector, **kwargs):
+        determinant = self.determinant_method.calculate(matrix, vector)
+        if determinant == 0:
+            raise ValueError("A matriz inserida não converge. O determinante é igual a zero.")
+        triangular_matrix_L, triangular_matrix_U, vector = self.calc_LU_decomposition(len(matrix), matrix, vector)
+        X = self.aux_LU(len(matrix), triangular_matrix_L, triangular_matrix_U, vector)
+        X = [0 if abs(x) < 1e-10 else x for x in X]
+        self.result = X
+        return X
+
+    def calc_LU_decomposition(self, ordem, matrix, vector):
+        triangular_matrix_U = np.zeros((ordem, ordem))
+        triangular_matrix_L = np.zeros((ordem, ordem))
+
+        for i in range(ordem):
+            self.calc_triangular_matrix_U(i, ordem, matrix, triangular_matrix_L, triangular_matrix_U)
+            self.calc_triangular_matrix_L(i, ordem, matrix, triangular_matrix_L, triangular_matrix_U)
+
+        return triangular_matrix_L, triangular_matrix_U, vector
+
     def calc_triangular_matrix_U(self, i, order, matrix, triangular_matrix_L, triangular_matrix_U):
         for j in range(order):
             if i == 0:
@@ -559,17 +144,25 @@ class Application:
 
         return X
 
-    def calc_LU_decomposition(self, ordem, matrix, vector):
-        triangular_matrix_U = np.zeros((ordem, ordem))
-        triangular_matrix_L = np.zeros((ordem, ordem))
+    def get_result_text(self):
+        return f"Solução (Decomposição LU): {', '.join(f'{x:.4f}' for x in self.result)}"
 
-        for i in range(ordem):
-            self.calc_triangular_matrix_U(i, ordem, matrix, triangular_matrix_L, triangular_matrix_U)
-            self.calc_triangular_matrix_L(i, ordem, matrix, triangular_matrix_L, triangular_matrix_U)
+class CholeskyMethod(LinearSystemMethod):
+    def __init__(self):
+        self.determinant_method = DeterminantMethod()
 
-        return triangular_matrix_L, triangular_matrix_U, vector
-    
-    ###### cholesky
+    def calculate(self, matrix, vector, **kwargs):
+        determinant = self.determinant_method.calculate(matrix, vector)
+        calc_simetric = self.calc_simetric(matrix)
+        if determinant < 0:
+            raise ValueError("A matriz inserida não é definida positiva.")
+        elif not calc_simetric:
+            raise ValueError("A matriz inserida não é simétrica.")
+        X = self.calc_cholesky(len(matrix), matrix, vector)
+        X = [0 if abs(x) < 1e-10 else x for x in X]
+        self.result = X
+        return X
+
     def calc_simetric(self, matrix):
         order = len(matrix)
         for i in range(order):
@@ -577,7 +170,23 @@ class Application:
                 if matrix[i][j] != matrix[j][i]:
                     return False
         return True
-    
+
+    def calc_cholesky(self, order, matrix, vector):
+        triangular_matrix_L = np.zeros((order, order))
+        self.aux_cholesky(order, matrix, triangular_matrix_L)
+        
+        # Ly = b utilizando a função de matriz triangular inferior
+        vector_y = np.zeros(order)
+        vector_y = self.calc_lower_triangular(order, triangular_matrix_L, vector)  
+        
+        # matriz transposta de L pelo .T do numpy
+        transposed_triangular_matrix_L = triangular_matrix_L.T
+        
+        # L^t x = y utilizando a função de matriz triangular superior
+        solution_vector = np.zeros(order)
+        solution_vector = self.calc_upper_triangular(order, transposed_triangular_matrix_L, vector_y)  
+        
+        return solution_vector
 
     def aux_cholesky(self, order, matrix, cholesky_matrix):
         for i in range(order):
@@ -599,26 +208,39 @@ class Application:
                     else:
                         cholesky_matrix[i][j] = 0
 
-    def calc_cholesky(self, order, matrix, vector):
-        triangular_matrix_L = np.zeros((order, order))
-        self.aux_cholesky(order, matrix, triangular_matrix_L)
-        
-        # Ly = b utilizando a função de matriz triangular inferior
-        vector_y = np.zeros(order)
-        vector_y = self.calc_lower_triangular(order, triangular_matrix_L, vector)  
-        
-        # matriz transposta de L pelo .T do numpy
-        transposed_triangular_matrix_L = triangular_matrix_L.T
-        
-        # L^t x = y utilizando a função de matriz triangular superior
-        solution_vector = np.zeros(order)
-        solution_vector = self.calc_upper_triangular(order, transposed_triangular_matrix_L, vector_y)  
-        
-        return solution_vector
+    def calc_lower_triangular(self, order, matrix, vector):
+        X = np.zeros(order)
+        for i in range(order):
+            if i == 0:
+                X[0] = vector[0] / matrix[0][0]
+            else:
+                soma = 0
+                for j in range(i):
+                    soma += matrix[i][j] * X[j]
+                X[i] = (vector[i] - soma) / matrix[i][i]
+        return X
 
+    def calc_upper_triangular(self, order, matrix, vector):
+        X = np.zeros(order)
+        for i in range(order - 1, -1, -1):
+            if i == order - 1:
+                X[i] = vector[i] / matrix[i][i]
+            else:
+                soma = 0
+                for j in range(i + 1, order):
+                    soma += matrix[i][j] * X[j]
+                X[i] = (vector[i] - soma) / matrix[i][i]
+        return X
 
+    def get_result_text(self):
+        return f"Solução (Cholesky): {', '.join(f'{x:.4f}' for x in self.result)}"
 
-    ###### gauss compacto
+class GaussCompactMethod(LinearSystemMethod):
+    def calculate(self, matrix, vector, **kwargs):
+        X = self.calc_compact_gauss(len(matrix), matrix, vector)
+        X = [0 if abs(x) < 1e-10 else x for x in X]
+        self.result = X
+        return X
 
     def calc_compact_gauss(self, order, matrix, vector):
         X = np.zeros(order)
@@ -639,9 +261,19 @@ class Application:
             X[i] = temp / matrix[i][i]
 
         return X
-    
 
-    ###### gauss jordan
+    def get_result_text(self):
+        return f"Solução (Gauss Compacto): {', '.join(f'{x:.4f}' for x in self.result)}"
+
+class GaussJordanMethod(LinearSystemMethod):
+    def calculate(self, matrix, vector, **kwargs):
+        X = self.calc_gauss_jordan(len(matrix), matrix, vector)
+        if X is None:
+            raise ValueError("O sistema gerado é indeterminado.")
+        X = [0 if abs(x) < 1e-10 else x for x in X]
+        self.result = X
+        return X
+
     def calc_gauss_jordan(self, order, matrix, vector):
         augmented_matrix = np.zeros((order, order + 1))
 
@@ -671,54 +303,29 @@ class Application:
             X[i] = augmented_matrix[i][order]
 
         return X
-    
 
-############################################################################## METODOS ITERATIVOS
+    def get_result_text(self):
+        return f"Solução (Gauss-Jordan): {', '.join(f'{x:.4f}' for x in self.result)}"
 
+class JacobiMethod(LinearSystemMethod):
+    def calculate(self, matrix, vector, **kwargs):
+        if not self.column_convergence(matrix) or not self.line_convergence(matrix):
+            raise ValueError("Matriz não converge. Critério de Linhas ou Colunas não satisfeito.")
+        
+        vector = vector.tolist()
+        aprox = [0] * len(matrix)
+        X = [0] * len(matrix)
+        max_iter = 1000  
+        e = 0.0001  # precisao
+        iterations = [0]
+        
+        self.calc_jacobi(len(matrix), matrix.tolist(), vector, aprox, e, max_iter, X, iterations)
+        X = [round(x, 4) for x in X]
+        self.result = X
+        self.iterations = iterations[0]
+        return X
 
-    ###### metodos auxiliares para os metodos iterativos
-
-    def column_convergence(self, matrix):
-        n = len(matrix)
-        for j in range(n):
-            diagonal_sum = 0
-            for i in range(n):
-                if i != j:
-                    diagonal_sum += abs(matrix[i][j])
-            if abs(matrix[j][j]) <= diagonal_sum:
-                return False
-        return True
-
-    def line_convergence(self, matrix):
-        n = len(matrix)
-        for i in range(n):
-            diagonal_sum = 0
-            for j in range(n):
-                if i != j:
-                    diagonal_sum += abs(matrix[i][j])
-            if abs(matrix[i][i]) <= diagonal_sum:
-                return False
-        return True
-
-
-    def sassenfeld_convergence_criterion(self, matrix):
-        n = len(matrix)
-        temp_vec = [0] * n
-
-        for i in range(n):
-            temp_sum = 0
-            for j in range(n):
-                if j != i:
-                    temp_sum += abs(matrix[i][j])
-            temp_vec[i] = temp_sum / abs(matrix[i][i])
-
-        largest_element = max(temp_vec)
-        return largest_element < 1
-
-
-    ###### Método de Jacobi
-
-    def calc_jacobi(self,order, matrix, vector, aprox, e, max_iterations, solution, iterations):
+    def calc_jacobi(self, order, matrix, vector, aprox, e, max_iterations, solution, iterations):
         temp = [0] * order
 
         for iteration in range(1, max_iterations + 1):
@@ -745,16 +352,56 @@ class Application:
 
         iterations[0] = iteration
         return solution
-    
 
-    ###### Método de Gauss Seidel
+    def column_convergence(self, matrix):
+        n = len(matrix)
+        for j in range(n):
+            diagonal_sum = 0
+            for i in range(n):
+                if i != j:
+                    diagonal_sum += abs(matrix[i][j])
+            if abs(matrix[j][j]) <= diagonal_sum:
+                return False
+        return True
 
-    def calc_gauss_seidel(self,order, matrix, vector, aprox, e, max_iterations, solution, iterations):
+    def line_convergence(self, matrix):
+        n = len(matrix)
+        for i in range(n):
+            diagonal_sum = 0
+            for j in range(n):
+                if i != j:
+                    diagonal_sum += abs(matrix[i][j])
+            if abs(matrix[i][i]) <= diagonal_sum:
+                return False
+        return True
+
+    def get_result_text(self):
+        return f"Solução (Jacobi): {', '.join(f'{x:.4f}' for x in self.result)}\nIterações: {self.iterations}"
+
+class GaussSeidelMethod(LinearSystemMethod):
+    def calculate(self, matrix, vector, **kwargs):
+        if not self.line_convergence(matrix) or not self.sassenfeld_convergence_criterion(matrix):
+            raise ValueError("Matriz não converge. Critério de Linhas ou Sassenfeld não satisfeito.")
+        
+        vector = vector.tolist()
+        aprox = [0] * len(matrix)
+        X = [0] * len(matrix)
+        max_iter = 1000  
+        e = 0.0001  # precisao
+        iterations = [0]
+        
+        self.calc_gauss_seidel(len(matrix), matrix.tolist(), vector, aprox, e, max_iter, X, iterations)
+        X = [round(x, 4) for x in X]
+        self.result = X
+        self.iterations = iterations[0]
+        return X
+
+    def calc_gauss_seidel(self, order, matrix, vector, aprox, e, max_iterations, solution, iterations):
         current = aprox.copy()
-        previous  = aprox.copy()
+        previous = aprox.copy()
 
         for iteration in range(max_iterations):
-            previous  = current.copy()
+            previous = current.copy()
 
             for i in range(order):
                 soma = 0
@@ -763,7 +410,7 @@ class Application:
                         soma += matrix[i][j] * current[j]
                 current[i] = (vector[i] - soma) / matrix[i][i]
 
-            difference = sum(abs(current[i] - previous [i]) for i in range(order))
+            difference = sum(abs(current[i] - previous[i]) for i in range(order))
 
             if difference < e:
                 break
@@ -774,14 +421,338 @@ class Application:
         iterations[0] = iteration
         return solution
 
+    def line_convergence(self, matrix):
+        n = len(matrix)
+        for i in range(n):
+            diagonal_sum = 0
+            for j in range(n):
+                if i != j:
+                    diagonal_sum += abs(matrix[i][j])
+            if abs(matrix[i][i]) <= diagonal_sum:
+                return False
+        return True
 
-###################################################################### MAIN
-def main():
-    root = tk.Tk()
-    app = Application(root)
-    root.mainloop()
-    
-    
+    def sassenfeld_convergence_criterion(self, matrix):
+        n = len(matrix)
+        temp_vec = [0] * n
+
+        for i in range(n):
+            temp_sum = 0
+            for j in range(n):
+                if j != i:
+                    temp_sum += abs(matrix[i][j])
+            temp_vec[i] = temp_sum / abs(matrix[i][i])
+
+        largest_element = max(temp_vec)
+        return largest_element < 1
+
+    def get_result_text(self):
+        return f"Solução (Gauss-Seidel): {', '.join(f'{x:.4f}' for x in self.result)}\nIterações: {self.iterations}"
+
+# ---------------------- Factory Pattern ----------------------
+class MethodFactory:
+    @staticmethod
+    def get_method(method_name):
+        methods = {
+            "determinant": DeterminantMethod(),
+            "lower_triangular": LowerTriangularMethod(),
+            "upper_triangular": UpperTriangularMethod(),
+            "lu_decomposition": LUDecompositionMethod(),
+            "cholesky": CholeskyMethod(),
+            "gauss_compact": GaussCompactMethod(),
+            "gauss_jordan": GaussJordanMethod(),
+            "jacobi": JacobiMethod(),
+            "gauss_seidel": GaussSeidelMethod(),
+        }
+        return methods.get(method_name)
+
+# ---------------------- Composite Pattern para as Views ----------------------
+class View(ABC):
+    def __init__(self, parent, controller):
+        self.parent = parent
+        self.controller = controller
+        self.frame = ttk.Frame(parent)
+
+    def show(self):
+        self.frame.pack(fill='both', expand=True)
+
+    def hide(self):
+        self.frame.pack_forget()
+
+    @abstractmethod
+    def setup(self):
+        pass
+
+class MainMenuView(View):
+    def setup(self):
+        self.frame.configure(padding="20 20 20 20")
+
+        ttk.Label(
+            self.frame,
+            text="Calculadora de Sistemas Lineares",
+            font=('Segoe UI', 14, 'bold'),
+            background='#f5f5f5'
+        ).pack(pady=(0, 20))
+
+        methods = [
+            ("Calcular Determinante", "determinant"),
+            ("Sistema Triangular Inferior", "lower_triangular"),
+            ("Sistema Triangular Superior", "upper_triangular"),
+            ("Decomposição LU", "lu_decomposition"),
+            ("Método de Cholesky", "cholesky"),
+            ("Gauss Compacto", "gauss_compact"),
+            ("Gauss-Jordan", "gauss_jordan"),
+            ("Método de Jacobi", "jacobi"),
+            ("Método de Gauss-Seidel", "gauss_seidel"),
+        ]
+
+        for text, method_name in methods:
+            btn = ttk.Button(
+                self.frame,
+                text=text,
+                command=lambda m=method_name: self.controller.show_method(m)
+            )
+            btn.pack(fill='x', pady=5)
+
+class MethodView(View):
+    def __init__(self, parent, controller, method_name):
+        super().__init__(parent, controller)
+        self.method_name = method_name
+
+    def setup(self):
+        self.frame.configure(padding="20 20 20 20")
+
+        ttk.Label(
+            self.frame,
+            text=f"Método: {self.method_name}",
+            font=('Segoe UI', 12, 'bold'),
+            background='#f5f5f5'
+        ).pack(pady=(0, 20))
+
+        back_btn = ttk.Button(
+            self.frame,
+            text="◄ Voltar",
+            command=self.controller.show_main_menu,
+            style='Link.TButton'
+        )
+        back_btn.pack(anchor='w', pady=(0, 15))
+
+        self.data_button = ttk.Button(
+            self.frame,
+            text="Inserir Dados" if not hasattr(self.controller, 'M') else "Alterar Dados",
+            command=self.controller.show_data_input
+        )
+        self.data_button.pack(pady=10)
+
+        # Verifica se o método é o determinante
+        if self.method_name == "determinant":
+            # Para o determinante, só precisa da matriz
+            self.calculate_button = ttk.Button(
+                self.frame,
+                text="Calcular",
+                command=self.calculate,
+                state=tk.NORMAL if hasattr(self.controller, 'M') else tk.DISABLED
+            )
+        else:
+            # Para outros métodos, precisa da matriz e do vetor
+            self.calculate_button = ttk.Button(
+                self.frame,
+                text="Calcular",
+                command=self.calculate,
+                state=tk.NORMAL if hasattr(self.controller, 'M') and hasattr(self.controller, 'V') else tk.DISABLED
+            )
+        self.calculate_button.pack(pady=10)
+
+        self.result_label = ttk.Label(
+            self.frame,
+            font=('Segoe UI', 10, 'bold'),
+            background='#f0f0f0',
+            padding=10
+        )
+        self.result_label.pack(fill='x', pady=2, ipady=5)
+
+    def calculate(self):
+        try:
+            method = MethodFactory.get_method(self.method_name)
+            if self.method_name == "determinant":
+                result = method.calculate(self.controller.M, None)  # Não precisa do vetor
+            else:
+                result = method.calculate(self.controller.M, self.controller.V)
+            self.result_label.config(text=method.get_result_text())
+        except ValueError as e:
+            messagebox.showerror("Erro", str(e))
+
+    def update_view(self):
+        """Atualiza a view para refletir o estado atual dos dados."""
+        if hasattr(self.controller, 'M'):
+            self.data_button.config(text="Alterar Dados")
+        else:
+            self.data_button.config(text="Inserir Dados")
+
+        if self.method_name == "determinant":
+            self.calculate_button.config(state=tk.NORMAL if hasattr(self.controller, 'M') else tk.DISABLED)
+        else:
+            self.calculate_button.config(state=tk.NORMAL if hasattr(self.controller, 'M') and hasattr(self.controller, 'V') else tk.DISABLED)
+
+class DataInputView(View):
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+        self.matrix_entries = []
+        self.vector_entries = []
+
+    def setup(self):
+        self.frame.configure(padding="20 20 20 20")
+
+        ttk.Label(
+            self.frame,
+            text="Inserir Matriz e Vetor",
+            font=('Segoe UI', 12, 'bold'),
+            background='#f5f5f5'
+        ).pack(pady=(0, 20))
+
+        back_btn = ttk.Button(
+            self.frame,
+            text="◄ Voltar",
+            command=self.controller.show_main_menu,
+            style='Link.TButton'
+        )
+        back_btn.pack(anchor='w', pady=(0, 15))
+
+        ttk.Label(self.frame, text="Ordem da matriz:", background='#f5f5f5').pack()
+        self.order_entry = ttk.Entry(self.frame, width=10)
+        self.order_entry.pack()
+
+        ttk.Button(
+            self.frame,
+            text="Confirmar Ordem",
+            command=self.create_entries
+        ).pack(pady=10)
+
+        self.matrix_frame = ttk.Frame(self.frame)
+        self.matrix_frame.pack()
+
+        self.vector_frame = ttk.Frame(self.frame)
+        self.vector_frame.pack()
+
+        ttk.Button(
+            self.frame,
+            text="Confirmar Dados",
+            command=self.confirm_data
+        ).pack(pady=10)
+
+    def create_entries(self):
+        try:
+            order = int(self.order_entry.get())
+            if order < 1 or order > 10:
+                raise ValueError("A ordem da matriz deve estar entre 1 e 10.")
+            
+            # Limpa entradas anteriores
+            for widget in self.matrix_frame.winfo_children():
+                widget.destroy()
+            for widget in self.vector_frame.winfo_children():
+                widget.destroy()
+
+            self.matrix_entries = []
+            for i in range(order):
+                row_entries = []
+                for j in range(order):
+                    entry = ttk.Entry(self.matrix_frame, width=8)
+                    entry.grid(row=i, column=j, padx=5, pady=5)
+                    row_entries.append(entry)
+                self.matrix_entries.append(row_entries)
+
+            ttk.Label(self.vector_frame, text="Vetor de termos independentes:", background='#f5f5f5').pack()
+            self.vector_entries = []
+            for i in range(order):
+                entry = ttk.Entry(self.vector_frame, width=8)
+                entry.pack(pady=2)
+                self.vector_entries.append(entry)
+
+        except ValueError as e:
+            messagebox.showerror("Erro", str(e))
+
+    def confirm_data(self):
+        try:
+            order = int(self.order_entry.get())
+            matrix = np.zeros((order, order))
+            vector = np.zeros(order)
+
+            for i in range(order):
+                for j in range(order):
+                    matrix[i][j] = float(self.matrix_entries[i][j].get())
+
+            for i in range(order):
+                vector[i] = float(self.vector_entries[i].get())
+
+            self.controller.M = matrix
+            self.controller.V = vector
+            messagebox.showinfo("Sucesso", "Dados inseridos com sucesso!")
+            self.controller.show_main_menu()
+
+        except ValueError as e:
+            messagebox.showerror("Erro", str(e))
+
+# ---------------------- Controlador Principal ----------------------
+class LinearSystemCalculator(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.geometry('480x520')
+        self.minsize(480, 520)
+        self.resizable(0, 0)
+        self.title('Calculadora de Sistemas Lineares')
+        self.configure(bg='#f5f5f5')
+
+        self.setup_styles()
+
+        self.container = ttk.Frame(self)
+        self.container.pack(fill='both', expand=True)
+
+        self.views = {}
+        self.current_view = None
+
+        self.setup_main_menu()
+
+    def setup_styles(self):
+        self.style = ttk.Style()
+        self.style.configure('TFrame', background='#f5f5f5')
+        self.style.configure('TLabel', background='#f5f5f5', font=('Segoe UI', 10))
+        self.style.configure('TButton', font=('Segoe UI', 10), padding=5)
+        self.style.configure('Link.TButton', font=('Segoe UI', 9), background='#f5f5f5', foreground='blue')
+
+    def setup_main_menu(self):
+        self.main_menu = MainMenuView(self.container, self)
+        self.main_menu.setup()
+        self.views['main_menu'] = self.main_menu
+        self.show_view('main_menu')
+
+    def show_view(self, view_name):
+        if self.current_view:
+            self.current_view.hide()
+        self.current_view = self.views[view_name]
+        self.current_view.show()
+
+        # Atualiza a view se for uma MethodView
+        if isinstance(self.current_view, MethodView):
+            self.current_view.update_view()
+
+    def show_main_menu(self):
+        self.show_view('main_menu')
+
+    def show_method(self, method_name):
+        view_name = f'method_{method_name}'
+        if view_name not in self.views:
+            method_view = MethodView(self.container, self, method_name)
+            method_view.setup()
+            self.views[view_name] = method_view
+        self.show_view(view_name)
+
+    def show_data_input(self):
+        if 'data_input' not in self.views:
+            data_input_view = DataInputView(self.container, self)
+            data_input_view.setup()
+            self.views['data_input'] = data_input_view
+        self.show_view('data_input')
 
 if __name__ == "__main__":
-    main()
+    app = LinearSystemCalculator()
+    app.mainloop()
