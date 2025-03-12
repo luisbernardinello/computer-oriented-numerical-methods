@@ -41,12 +41,6 @@ The following methods for solving linear systems have been implemented:
   - Upper triangular system solver
   - Essential building blocks for other methods
 
-- **Matrix Inversion**
-
-  - Calculates the inverse matrix using Gaussian elimination
-  - Solves n linear systems for each column of the identity matrix
-  - Implementation using both Gauss Compact and LU Decomposition methods
-
 - **Iterative Methods**
 
   - **Jacobi Method**
